@@ -316,7 +316,7 @@ export default class FiltersStorage extends AppManager {
   }
 
   /** all filters the dialogs are indexed for (the user's folders + Prive's local Channels filter) */
-  public getFilters() {
+  public getFilters(): {[filterId: string]: MyDialogFilter} {
     return {...this.filters, [PRIVE_CHANNELS_FILTER_ID]: this.priveChannelsFilter};
   }
 

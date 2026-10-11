@@ -51,7 +51,7 @@
     <link rel="apple-touch-startup-image" media="screen and (device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="prive/splash-1320x2868.png">
     <script>
       // Prive only (the Telegram view was removed): drop the old per-device view flag.
-      (function(){try{ localStorage.removeItem('prive_view'); localStorage.removeItem('prive_switch_pending'); if(localStorage.getItem('user_auth')) document.documentElement.classList.add('prive-locked'); }catch(e){} document.documentElement.classList.add('prive-view-prive');})(); // signed in: chats stay hidden until the Prive password is entered
+      (function(){try{ localStorage.removeItem('prive_view'); localStorage.removeItem('prive_switch_pending'); if(localStorage.getItem('user_auth') && localStorage.getItem('prive_pass_on') === '1') document.documentElement.classList.add('prive-locked'); }catch(e){} document.documentElement.classList.add('prive-view-prive');})(); // signed in: chats stay hidden until the Prive password is entered
     </script>
     <link rel="stylesheet" href="prive/prive-web.css">
     <link rel="stylesheet" href="prive/prive-lock.css">

@@ -1,10 +1,10 @@
 /*
- * Prive password: MANDATORY, Telegram-passcode-style app lock.
- *  - After the first login the user must create one (no skip).
- *  - Asked every time Prive is opened or reloaded, and when it comes back after more than ~1 minute in the background.
- *  - Settings can change it, never turn it off.
+ * Prive password: OPTIONAL, Telegram-passcode-style app lock (off by default).
+ *  - Settings > Prive password turns it on (create), changes it, or turns it off (needs the current password).
+ *  - When on: asked every time Prive is opened or reloaded, and when it comes back after more than ~1 minute in the
+ *    background; Face ID can be added. When off: no lock screen at all.
  * Verified on the Prive server (scrypt, per-user attempt limits / lockouts); "Forgot password?" re-verifies the
- * Telegram account through @Prive2026Bot, which clears it, and the user creates a new one right away.
+ * Telegram account through @Prive2026Bot, which clears it (the user may then set a new one).
  */
 import {verifyTelegramFor} from '@/prive/tglink';
 import {bioAvailable, bioOn, bioUnlock, bioRegister, bioRemove, bioSync, bioForget, bioLabel, bioAction} from '@/prive/faceid';
@@ -151,11 +151,11 @@ export async function forgotPassword(): Promise<boolean> {
 const MIN = 4;
 const newPw = (v: Record<string, string>) => (v.a || '').length < MIN ? `Use at least ${MIN} characters` : v.a !== v.b ? "Passwords don't match" : '';
 
-/** First login (or after "Forgot password?"): create the Prive password. No way to skip. */
+/** Turn the Prive password on (Settings), or choose a new one after "Forgot password?" ("Not now" = stay without). */
 function setupScreen(instant = true, afterReset = false): Promise<boolean> {
   return screen({
-    title: 'Create your Prive password', instant, cancel: false,
-    sub: afterReset ? 'Your Telegram account is verified. Choose a new Prive password.' : 'Prive asks for it every time you open the app, on all your devices.',
+    title: afterReset ? 'New Prive password' : 'Create your Prive password', instant, cancel: afterReset ? 'Not now' : 'Cancel',
+    sub: afterReset ? 'Your Telegram account is verified and the old password is removed. Choose a new one, or continue without.' : 'Prive will ask for it every time you open the app, on all your devices.',
     fields: [{label: 'New password', key: 'a'}, {label: 'Repeat password', key: 'b'}], button: 'Create password',
     submit: async(v) => {
       const e = newPw(v); if(e) return e;
@@ -178,7 +178,7 @@ function unlockScreen(instant = true, bio = false): Promise<boolean> {
         if(r.status === 200) setUT(r.j);
         return r.status === 200 ? true : why(r);
       },
-      onForgot: () => setupScreen(true, true).then(async(v) => { await offerBio(); resolve(v); }) // reset by Telegram re-verification -> new password now (+ Face ID again)
+      onForgot: () => { localStorage.setItem(ON_KEY, '0'); setupScreen(true, true).then(async(v) => { if(v) await offerBio(); resolve(true); }); } // reset by Telegram re-verification -> optionally a new password (+ Face ID again)
     }).then(resolve);
   });
 }
@@ -238,6 +238,7 @@ async function lockNow(instant: boolean) {
     for(let i = 0; ; i++) { // need the server's answer (enabled?) — keep retrying while offline, behind a cover
       st = await api('').catch((): any => ({status: 0, j: {}}));
       if(st.status === 200 || st.status === 401) break;
+      if(localStorage.getItem(ON_KEY) !== '1') { cov?.remove(); busy = false; setLocked(false); return; } // no password known here: never block the app
       if(!cov) {
         cov = document.createElement('div'); cov.className = 'prive-lock show instant prive-lock-wait';
         cov.innerHTML = `<div class="prive-lock-in"><div class="prive-lock-icon">${LOCK_SVG}</div><h2>Prive is locked</h2><p class="prive-lock-sub">Can't reach Prive right now. Retrying…</p></div>`;
@@ -254,12 +255,13 @@ async function lockNow(instant: boolean) {
     localStorage.setItem(ON_KEY, st.j.enabled ? '1' : '0');
     bioSync(st.j.passkeys);
     if(st.j.enabled) await unlockScreen(instant, bioOn() && await bioAvailable());
-    else { await setupScreen(instant); await offerBio(); }
+    else bioForget(); // password off (default): nothing to unlock
   } finally { busy = false; }
   setLocked(false);
 }
 
 const BG_LOCK_MS = 60e3;
+const passOnHere = () => localStorage.getItem(ON_KEY) === '1';
 /** Called once when the signed-in app starts (prive/ui.ts). */
 export function installAppLock() {
   lockNow(true);
@@ -273,12 +275,12 @@ export function installAppLock() {
   let hiddenAt = 0;
   document.addEventListener('visibilitychange', () => {
     if(document.hidden) { hiddenAt = Date.now(); return; }
-    if(hiddenAt && Date.now() - hiddenAt > BG_LOCK_MS && !locked) lockNow(true);
+    if(hiddenAt && Date.now() - hiddenAt > BG_LOCK_MS && !locked && passOnHere()) lockNow(true);
     hiddenAt = 0;
   });
   // iOS Home Screen apps can be frozen without visibilitychange: pagehide/pageshow carry the same signal
   window.addEventListener('pagehide', () => { hiddenAt = hiddenAt || Date.now(); });
-  window.addEventListener('pageshow', (e) => { if((e as PageTransitionEvent).persisted && hiddenAt && Date.now() - hiddenAt > BG_LOCK_MS && !locked) lockNow(true); hiddenAt = 0; });
+  window.addEventListener('pageshow', (e) => { if((e as PageTransitionEvent).persisted && hiddenAt && Date.now() - hiddenAt > BG_LOCK_MS && !locked && passOnHere()) lockNow(true); hiddenAt = 0; });
 }
 
 /** right after the password is created: offer Face ID on this device (once; Settings can turn it on later) */
@@ -309,11 +311,38 @@ export const bioSetting = {
   async set(on: boolean): Promise<true | string> { if(on) return bioRegister(api); await bioRemove(api); return true; }
 };
 
-/** Settings > Prive password: change it (it can't be turned off). */
+/** Settings > Prive password: Off -> create it (turns the lock on); On -> change it or turn it off. */
 export async function openPassSettings(): Promise<void> {
-  if(!(await passEnabled())) { await setupScreen(false); return; }
+  if(!(await passEnabled())) {
+    if(await setupScreen(false)) { setLocked(false); await offerBio(); }
+    return;
+  }
+  const pick = await new Promise<'change' | 'off' | null>((resolve) => {
+    const el = document.createElement('div'); el.className = 'prive-asheet-root';
+    const body = document.createElement('div'); body.className = 'prive-asheet-in'; el.append(body);
+    const close = (v: 'change' | 'off' | null) => { el.classList.remove('is-open'); setTimeout(() => el.remove(), 220); resolve(v); };
+    el.addEventListener('click', (e) => { if(e.target === el) close(null); });
+    const h = document.createElement('div'); h.className = 'prive-asheet-title'; h.textContent = 'Prive password is on'; body.append(h);
+    const b = (t: string, cls: string, v: 'change' | 'off' | null) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'prive-asheet-btn ' + cls; x.textContent = t; x.onclick = () => close(v); body.append(x); };
+    b('Change password', '', 'change'); b('Turn password off', 'danger', 'off'); b('Cancel', 'cancel', null);
+    document.body.append(el); requestAnimationFrame(() => el.classList.add('is-open'));
+  });
+  if(pick === 'off') {
+    await screen({
+      title: 'Turn off Prive password', sub: 'Prive will open without asking for a password. Face ID unlock is removed too.',
+      fields: [{label: 'Current password', key: 'c'}], button: 'Turn off', forgot: false,
+      submit: async(v) => {
+        if(!v.c) return 'Enter your password';
+        const r = await api('/disable', {password: v.c});
+        if(r.status === 200) { localStorage.setItem(ON_KEY, '0'); bioForget(); UT = null; return true; }
+        return why(r);
+      }
+    });
+    return;
+  }
+  if(pick !== 'change') return;
   await screen({
-    title: 'Change Prive password', sub: 'The Prive password is always on. It is asked every time you open Prive.',
+    title: 'Change Prive password', sub: 'It is asked every time you open Prive.',
     fields: [{label: 'Current password', key: 'c'}, {label: 'New password', key: 'a'}, {label: 'Repeat new password', key: 'b'}],
     button: 'Change password', forgot: true,
     submit: async(v) => {
@@ -322,6 +351,6 @@ export async function openPassSettings(): Promise<void> {
       if(r.status === 200) setUT(r.j);
       return r.status === 200 ? true : why(r);
     },
-    onForgot: () => { setupScreen(true, true); }
+    onForgot: () => { localStorage.setItem(ON_KEY, '0'); setupScreen(true, true); }
   });
 }
