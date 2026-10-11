@@ -85,6 +85,7 @@ export function installSiteStories(): HTMLDivElement {
     } else if(d.prive === 'site' && d.site) openSiteSheet(d.site);
   });
   window.addEventListener('prive-prefs', load);
+  window.addEventListener('prive-stories-reload', load);
   window.addEventListener('storage', (e) => { if(e.key === 'prive_token') load(); });
   document.addEventListener('visibilitychange', () => { if(!document.hidden) load(); });
   clearInterval(timer); timer = window.setInterval(load, 60e3);

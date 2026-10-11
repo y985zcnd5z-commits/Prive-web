@@ -109,6 +109,6 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
     header.insertAdjacentElement('afterend', pills); // search bar -> All/Channels/Websites/Bots pill -> website stories
     pills.insertAdjacentElement('afterend', strip);
   };
-  createRoot(() => createEffect(() => { privePrefs(); place(); window.dispatchEvent(new CustomEvent('prive-prefs')); }));
+  createRoot(() => createEffect(() => { privePrefs(); place(); window.dispatchEvent(new CustomEvent('prive-stories-reload')); })); // not 'prive-prefs': that reloads prefs -> effect -> loop
   setTimeout(place, 1000);
 }
