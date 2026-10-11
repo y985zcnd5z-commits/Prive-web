@@ -1,5 +1,6 @@
 // Prive Web (unofficial Telegram client, based on Telegram WebK, GPL-3.0):
-//  - logged-out first screen = Prive mode chooser (client / website administrator), then Telegram login
+//  - one Prive for everyone: logged out -> Telegram login straight away (no modes); Website Connect activates
+//    automatically when someone arrives from a website's Chat on Prive button
 //  - phone-number login by default on phones / touch / small screens
 //  - after login, the Prive UI (Settings rows, Websites tab, mobile glass tab bar, website tabs) lives in the tweb source: src/prive/
 (function () {
@@ -11,10 +12,18 @@
     gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>'
   };
   var MODE_KEY = 'prive_mode', TOKEN_KEY = 'prive_token';
+  // ---------- Chat on Prive (website button) -> Website Connect: keep the params through the Telegram sign-in ----------
+  (function connectParams() {
+    var q = new URLSearchParams(location.search), site = q.get('connect');
+    if (!site || !/^[\w.-]{1,80}$/.test(site)) return;
+    var listing = q.get('listing'); if (listing && !/^[\w.-]{1,80}$/.test(listing)) listing = null;
+    localStorage.setItem('prive_connect', JSON.stringify({ site: site, listing: listing, at: Date.now() }));
+    q.delete('connect'); q.delete('listing');
+    history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+  })();
   var isTouchSmall = function () { return (navigator.maxTouchPoints || 0) > 0 || matchMedia('(max-width: 820px), (pointer: coarse)').matches; };
   function el(tag, attrs, html) { var e = document.createElement(tag); for (var k in attrs || {}) e.setAttribute(k, attrs[k]); if (html != null) e.innerHTML = html; return e; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function mode() { var m = localStorage.getItem(MODE_KEY); return m === 'admin' || m === 'client' ? m : null; }
   function token() { return localStorage.getItem(TOKEN_KEY); }
   function api(path, opts) { opts = opts || {}; opts.headers = Object.assign({ Authorization: 'Bearer ' + token(), 'Content-Type': 'application/json' }, opts.headers || {}); return fetch('/api' + path, opts).then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); }); }
 
@@ -22,6 +31,18 @@
     document.title = 'Prive Web · unofficial Telegram client';
     var chats = document.getElementById('page-chats');
     var isAuth = function () { return !chats || chats.style.display === 'none'; };
+
+    // ---------- arrived from a website's Chat on Prive button: say what happens after the sign-in ----------
+    (function connectHint() {
+      var pc; try { pc = JSON.parse(localStorage.getItem('prive_connect') || 'null'); } catch (e) {}
+      if (!pc || Date.now() - pc.at > 3600e3 || !isAuth()) return;
+      fetch('/api/connect/' + encodeURIComponent(pc.site)).then(function (r) { return r.json(); }).then(function (i) {
+        if (!i || !i.site || !isAuth()) return;
+        var h = el('div', { id: 'prive-connect-hint', role: 'status' }, '<b>' + esc(i.site.name) + '</b> · Sign in with Telegram and your private Website Connect chat' + (i.listing ? ' about <b>' + esc(i.listing.title) + '</b>' : '') + ' opens right away. You stay anonymous.');
+        document.body.appendChild(h);
+        var t = setInterval(function () { if (!isAuth()) { h.remove(); clearInterval(t); } }, 1000);
+      }).catch(function () {});
+    })();
 
     // ---------- one-time 'Add Prive to Home Screen' hint (iOS Safari only, never in the installed app) ----------
     (function a2hs() {
@@ -33,7 +54,8 @@
       var tries = 0;
       var t = setInterval(function () {
         if (++tries > 60) return clearInterval(t);
-        if (!localStorage.getItem('prive_mode') || (document.getElementById('prive-choose') && document.getElementById('prive-choose').offsetParent)) return; // after the mode chooser
+        if (localStorage.getItem('prive_connect')) return; // arriving from Chat on Prive: no extra prompts
+        if (isAuth()) return; // shown after the Telegram login, in the chat list
         clearInterval(t);
         var share = '<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px"><path d="M12 3l4 4-1.4 1.4L13 6.8V15h-2V6.8L9.4 8.4 8 7zM5 10h3v2H6v8h12v-8h-2v-2h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V11a1 1 0 0 1 1-1z" fill="currentColor"/></svg>';
         var el = document.createElement('div');
@@ -51,25 +73,11 @@
     var badge = el('div', { id: 'prive-badge' }, '<b>Prive</b> · unofficial Telegram client · not affiliated with Telegram · <a href="https://github.com/y985zcnd5z-commits/prive-web" target="_blank" rel="noopener">source (GPL-3.0)</a>');
     document.body.appendChild(badge);
 
-    // ---------- mode chooser (logged out, first screen) ----------
-    var chooser = el('div', { id: 'prive-choose', role: 'dialog', 'aria-label': 'Welcome to Prive' },
-      '<div class="pc-in"><div class="pc-logo">P</div><h1>Welcome to <span>Prive</span></h1><p class="pc-lead">How do you want to use Prive? You can switch later in Settings.</p>' +
-      '<button type="button" class="pc-mode" data-mode="client"><span class="pc-ic">' + IC.chat + '</span><span><b>Connect as a client</b><small>Chat privately with advertisers from websites and keep your favourite websites one tap away above your chats.</small></span></button>' +
-      '<button type="button" class="pc-mode admin" data-mode="admin"><span class="pc-ic">' + IC.shield + '</span><span><b>Connect as website administrator</b><small>Connect your website, get the Chat on Prive button, monitor and take over chats, reply as advertiser, assistant or team.</small></span></button>' +
-      '<p class="pc-next">Next: sign in with your Telegram account.</p><p class="pc-foot"><b>Prive</b> · unofficial Telegram client · not affiliated with Telegram</p></div>');
-    document.body.appendChild(chooser);
-    var modeChip = el('button', { id: 'prive-mode-chip', type: 'button', title: 'Change how you use Prive' });
-    document.body.appendChild(modeChip);
-    modeChip.onclick = function () { localStorage.removeItem(MODE_KEY); sync(); };
-    Array.prototype.forEach.call(chooser.querySelectorAll('.pc-mode'), function (b) {
-      b.onclick = function () { localStorage.setItem(MODE_KEY, b.dataset.mode); window.dispatchEvent(new Event('prive-prefs')); sync(); preferPhone(true); };
-    });
-
     // ---------- phone login on touch / small screens ----------
     var userPickedQr = false, autoClicks = 0;
     document.addEventListener('click', function (e) { var t = e.target && e.target.closest && e.target.closest('button,a,.btn'); if (t && e.isTrusted && /qr/i.test(t.textContent || '')) userPickedQr = true; }, true);
     function preferPhone(force) {
-      if (!isAuth() || !mode() || userPickedQr || !isTouchSmall() || autoClicks > 3) return;
+      if (!isAuth() || userPickedQr || !isTouchSmall() || autoClicks > 3) return;
       var nodes = document.querySelectorAll('button, a, .btn, [role=button]');
       for (var i = 0; i < nodes.length; i++) {
         var n = nodes[i];
@@ -80,10 +88,8 @@
 
     // ---------- state sync ----------
     function sync() {
-      var auth = isAuth(), m = mode();
+      var auth = isAuth();
       document.body.classList.toggle('prive-auth', auth);
-      document.body.classList.toggle('prive-choosing', auth && !m);
-      modeChip.innerHTML = m ? (m === 'admin' ? 'Website administrator' : 'Client') + ' · <u>change</u>' : '';
       if (auth) preferPhone(false);
     }
     sync();

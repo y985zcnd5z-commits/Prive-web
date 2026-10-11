@@ -138,3 +138,7 @@ html:not(.night) .prive-sheet{--ps-bg:#f7f5f0;--ps-fg:#0A0B12;--ps-muted:#5B6475
 #prive-a2hs span{color:#A89F90;font-size:13.5px}
 #prive-a2hs span b{color:#F3EDE2;font-weight:600}
 #prive-a2hs button{flex:none;width:30px;height:30px;border:0;border-radius:50%;background:rgba(255,255,255,.08);color:#F3EDE2;font-size:14px}
+
+/* arrived from a website's Chat on Prive button */
+#prive-connect-hint{position:fixed;z-index:2500;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top));max-width:520px;margin:0 auto;padding:10px 14px;border-radius:12px;background:rgba(20,22,40,.96);border:1px solid rgba(201,168,106,.35);color:#F3EDE2;font-size:13.5px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,.35);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+#prive-connect-hint b{color:#C9A86A}

@@ -7,8 +7,8 @@ import Section from '@components/section';
 import {toast} from '@components/toast';
 import themeController from '@helpers/themeController';
 import rootScope from '@lib/rootScope';
-import {priveMode, priveSignedIn, loadPrivePrefs, pushIsOn, setPush, pushSupported} from '@/prive/api';
-import {PriveModeTab, PriveWebsitesTab} from '@/prive/tabs';
+import {priveSignedIn, loadPrivePrefs, pushIsOn, setPush, pushSupported} from '@/prive/api';
+import {PriveWebsitesTab} from '@/prive/tabs';
 import type SidebarSlider from '@components/slider';
 
 export default function PriveSettingsSection(props: {slider: SidebarSlider}) {
@@ -32,12 +32,6 @@ export default function PriveSettingsSection(props: {slider: SidebarSlider}) {
 
   return (
     <Section name={<span>Prive</span>} caption={<span>Prive · unofficial Telegram client · not affiliated with Telegram</span>}>
-      <Row clickable={() => props.slider.createTab(PriveModeTab).open()}>
-        <Row.Icon icon="admin_filled" />
-        <Row.Title titleRight={text(priveMode() === 'admin' ? 'Administrator' : 'Client')} titleRightSecondary>
-          {text('Prive mode')}
-        </Row.Title>
-      </Row>
       <Row clickable={() => props.slider.createTab(PriveWebsitesTab).open()}>
         <Row.Icon icon="web_filled" />
         <Row.Title titleRight={priveSignedIn() ? undefined : text('Sign in')} titleRightSecondary>{text('Websites')}</Row.Title>

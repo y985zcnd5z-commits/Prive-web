@@ -10,7 +10,7 @@ import type {AppSidebarLeft} from '@components/sidebarLeft';
 import {AppContactsTab} from '@components/solidJsTabs/tabs';
 import {AppSettingsTab, AppEditProfileTab, getEditProfileInitArgs} from '@components/solidJsTabs';
 import {PriveWebsitesTab} from '@/prive/tabs';
-import {loadPrivePrefs, privePrefs, priveMode, PriveSite} from '@/prive/api';
+import {loadPrivePrefs, privePrefs, PriveSite} from '@/prive/api';
 
 type TabKey = 'chats' | 'contacts' | 'websites' | 'settings' | 'profile';
 const SVG: Record<TabKey, string> = {
@@ -71,6 +71,14 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
     else if(key === 'profile') sidebar.createTab(AppEditProfileTab).open(getEditProfileInitArgs(true));
   }
 
+  // Arrived from a website's Chat on Prive button: open Websites with that Website Connect chat (the embedded
+  // /app does wc:open after the verified sign-in, shows the one-time consent and opens the chat).
+  const pendingConnect = () => { try { const p = JSON.parse(localStorage.getItem('prive_connect') || 'null'); return p && Date.now() - p.at < 3600e3 ? p : null; } catch(e) { return null; } };
+  const checkConnect = () => { if(pendingConnect()) { active = 'chats'; select('websites'); } };
+  setTimeout(checkConnect, 800);
+  window.addEventListener('prive-connect', checkConnect);
+  window.addEventListener('storage', (e: StorageEvent) => { if(e.key === 'prive_connect' && e.newValue) checkConnect(); });
+
   // Show the bar only on the root screens of the mobile layout (like Telegram: hidden inside a chat or a sub-screen).
   const history = () => ((sidebar as any).historyTabIds as any[]) || [];
   const update = () => {
@@ -105,7 +113,7 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
   };
   createRoot(() => createEffect(() => {
     const p = privePrefs();
-    const sites = priveMode() === 'client' ? (p.userSites || []) : [];
+    const sites = p.userSites || []; // one Prive for everyone: website tabs whenever the user has saved sites
     place();
     strip.replaceChildren();
     strip.classList.toggle('hide', !sites.length);
