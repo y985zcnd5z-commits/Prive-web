@@ -42,6 +42,8 @@ export default class SortedDialogList {
   private disposeFolderTags: () => void;
   private totalCount = 0;
   private totalCountOffset = 0;
+  /** Prive: Website Connect rows mixed into the list (src/prive/wcChats.ts) */
+  private priveCountOffset = 0;
 
   /**
    * The custom emoji from the last message gets destroyed completely when removing the dialog
@@ -359,8 +361,14 @@ export default class SortedDialogList {
 
   private updateTotalCount() {
     this.virtualList.setTotalCount(
-      Math.max(0, this.totalCount + this.totalCountOffset)
+      Math.max(0, this.totalCount + this.totalCountOffset + this.priveCountOffset)
     );
+  }
+
+  public setPriveCountOffset(n: number) {
+    if(n === this.priveCountOffset) return;
+    this.priveCountOffset = n;
+    this.updateTotalCount();
   }
 
   public has(key: any) {
@@ -426,6 +434,7 @@ export default class SortedDialogList {
   public clear() {
     this.totalCount = 0;
     this.totalCountOffset = 0;
+    this.priveCountOffset = 0;
     this.virtualList?.clear();
   }
 

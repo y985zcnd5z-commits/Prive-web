@@ -13,6 +13,7 @@ import {PriveWebsitesTab} from '@/prive/tabs';
 import {loadPrivePrefs, privePrefs} from '@/prive/api';
 import {installSiteStories} from '@/prive/siteStories';
 import {installFolderPills} from '@/prive/folderPills';
+import {installWcChats} from '@/prive/wcChats';
 
 type TabKey = 'chats' | 'contacts' | 'websites' | 'settings'; // Profile lives in Settings (header + rows)
 const SVG: Record<TabKey, string> = {
@@ -40,7 +41,7 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
   if(pcl && !po) history.replaceState(null, '', location.pathname);
   if(po) {
     history.replaceState(null, '', location.pathname);
-    import('@/prive/passlock').then((pl) => pl.onceUnlocked(() => import('@/prive/websitesTab').then((m) => m.openWebsiteChats(po))));
+    import('@/prive/passlock').then((pl) => pl.onceUnlocked(() => import('@/prive/wcChats').then((m) => m.openWcChatById(po)))); // opens in the normal chat screen
   }
   document.body.classList.add('prive-ui');
   loadPrivePrefs();
@@ -68,6 +69,7 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
   // ---------- website updates as a stories row above the chat list (Telegram Stories are disabled in Prive) ----------
   const strip = installSiteStories();
   const pills = installFolderPills(() => select('websites'));
+  installWcChats(); // Website Connect chats as normal rows of the chat list
   const place = () => {
     if(strip.isConnected && pills.isConnected) return;
     const header = document.querySelector('#column-left .item-main .sidebar-header');

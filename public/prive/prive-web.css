@@ -288,3 +288,25 @@ html:not(.night) .prive-pills.prive-pills-v3 .prive-pill-dot{box-shadow:0 0 0 2p
 .prive-asheet-btn.cancel{background:none;color:#C9A86A}
 @media (prefers-reduced-motion:reduce){.prive-asheet-in,.prive-asheet-btn{transition:none}}
 .prive-websites-native .c-ripple{pointer-events:none}
+
+/* ---- Website Connect chats as normal chat-list rows (src/prive/wcChats.ts) ---- */
+.prive-wc-av{position:relative;width:54px;height:54px;border-radius:50%;flex:none;display:grid;place-items:center;
+  background:linear-gradient(145deg,#2a2b36,#1a1b24);color:#C9A86A;font-weight:600;font-size:19px;letter-spacing:.02em}
+.prive-wc-av .prive-wc-pic{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;opacity:0;transition:opacity .2s}
+.prive-wc-av.has-pic .prive-wc-pic{opacity:1}.prive-wc-av.has-pic .prive-wc-ini{visibility:hidden}
+.prive-wc-badge{position:absolute;right:-1px;bottom:-1px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
+  background:#C9A86A;color:#14151c;box-shadow:0 0 0 2px var(--surface-color,#0A0B12);overflow:hidden}
+.prive-wc-badge svg{width:13px;height:13px}
+.prive-wc-badge.has-fav{background:#fff}.prive-wc-badge.has-fav img{width:14px;height:14px;object-fit:contain}
+.prive-wc-badge.is-mod{background:#14151c;color:#C9A86A;box-shadow:0 0 0 2px var(--surface-color,#0A0B12),inset 0 0 0 1.5px #C9A86A}
+.chatlist-chat.prive-wc-row .prive-wc-via{color:var(--primary-color,#C9A86A)}
+.chatlist-chat.prive-wc-row.prive-wc-mod .prive-wc-via{color:#C9A86A;font-weight:500}
+.chatlist-chat.prive-wc-row:hover .prive-wc-badge,.chatlist-chat.prive-wc-row.active .prive-wc-badge{box-shadow:0 0 0 2px var(--light-secondary-text-color,#1b1c25)}
+.prive-wc-chat{position:fixed;inset:0;z-index:900;background:var(--surface-color,#0A0B12);transform:translateX(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1)}
+.prive-wc-chat.in-center{position:absolute;transform:none;opacity:0;transition:opacity .18s}
+.prive-wc-chat.show{transform:none;opacity:1}
+.prive-wc-chat iframe{width:100%;height:100%;border:0;display:block}
+body.prive-wc-open .prive-tabbar{display:none!important}
+@media (prefers-reduced-motion:reduce){.prive-wc-chat{transition:none}}
+#column-center:has(>.prive-wc-chat){position:relative}
+.prive-wc-chat:not(.in-center){padding-top:var(--prive-sat,0px);padding-bottom:var(--prive-sab,0px);box-sizing:border-box}

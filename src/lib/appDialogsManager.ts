@@ -2279,6 +2279,13 @@ export class AppDialogsManager {
         return;
       }
 
+      // Prive: a Website Connect chat row (src/prive/wcChats.ts) opens Prive's own chat screen
+      if(elem.dataset.priveWc) {
+        cancelEvent(e);
+        document.dispatchEvent(new CustomEvent('prive-wc-open', {detail: elem.dataset.priveWc}));
+        return;
+      }
+
       const peerId = elem.dataset.peerId.toPeerId();
       const lastMsgId = +elem.dataset.mid || undefined;
       const threadId = +elem.dataset.threadId || undefined;

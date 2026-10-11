@@ -164,7 +164,13 @@ export default class DialogsContextMenu {
         this.isCommunityCollapsed = false;
       },
       findElement: (e) => {
-        return findDialogListElement(e.target);
+        const el = findDialogListElement(e.target);
+        // Prive: Website Connect rows have their own menu (pin / mute / archive / read), not Telegram's
+        if(el?.dataset.priveWc) {
+          document.dispatchEvent(new CustomEvent('prive-wc-menu', {detail: el.dataset.priveWc}));
+          return undefined;
+        }
+        return el;
       }
     });
   }

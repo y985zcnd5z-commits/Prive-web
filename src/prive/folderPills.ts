@@ -43,6 +43,7 @@ async function setFilter(f: PriveListFilter) {
     for(const [fid, r] of Object.entries<any>(adm.filtersRendered || {})) r?.container?.classList.toggle('active', +fid === id);
     adm.xds?.[id]?.scrollable?.container?.scrollTo({top: 0});
   } catch(e) { console.warn('[prive] channels filter', e); }
+  document.dispatchEvent(new CustomEvent('prive-filter-change', {detail: f})); // wcChats.ts puts its rows back into All
 }
 
 const hostOf = (u: string) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch(e) { return u; } };
