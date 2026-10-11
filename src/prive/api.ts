@@ -33,6 +33,7 @@ async function api<T = any>(path: string, init: RequestInit = {}): Promise<T> {
   if(r.status === 401) {
     localStorage.removeItem(TOKEN_KEY);
     store.setSignedIn(false);
+    import('@/prive/tglink').then((m) => m.priveAutoLink());
   }
   if(!r.ok) throw r.status;
   return r.json();

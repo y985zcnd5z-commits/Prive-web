@@ -27,6 +27,7 @@ export class PriveWebsitesTab extends SliderSuperTab {
     if(section) q.set('section', section);
     q.set('theme', document.documentElement.classList.contains('night') ? 'noir' : 'light');
     frame.src = '/app/?' + q.toString();
+    if(!localStorage.getItem('prive_token')) import('@/prive/tglink').then((m) => m.priveAutoLink());
     this.scrollable.container.replaceWith(frame);
     // The embedded view asks us to go back (its own chat screen closed) or tells us prefs changed.
     const onMessage = (e: MessageEvent) => {

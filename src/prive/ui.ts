@@ -23,6 +23,8 @@ const SVG: Record<TabKey, string> = {
 const LABEL: Record<TabKey, string> = {chats: 'Chats', contacts: 'Contacts', websites: 'Websites', settings: 'Settings', profile: 'Profile'};
 
 export function installPriveUI(sidebar: AppSidebarLeft) {
+  // sign in to Prive with this Telegram account automatically (verified by Telegram via the Prive bot)
+  setTimeout(() => import('@/prive/tglink').then((m) => m.priveAutoLink()), 1500);
   document.body.classList.add('prive-ui');
   loadPrivePrefs();
   import('@/prive/translate').then((m) => {
