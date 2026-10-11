@@ -28,6 +28,7 @@ import {useSuperTab} from '@components/solidJsTabs/superTabProvider';
 import {useHotReloadGuard} from '@lib/solidjs/hotReloadGuard';
 import type AppSharedMediaTab from '@components/sidebarRight/tabs/sharedMediaTab';
 import createContextMenu from '@helpers/dom/createContextMenu';
+import {TEST_NO_STORIES} from '@appManagers/constants';
 import findUpClassName from '@helpers/dom/findUpClassName';
 import {toastNew} from '@components/toast';
 import {
@@ -726,10 +727,10 @@ const SharedMedia: Component = () => {
     mediaTabs: [{
       name: 'SharedMedia.SavedDialogs',
       type: 'savedDialogs'
-    }, {
-      name: 'Stories',
-      type: 'stories'
-    }, {
+    }, ...(TEST_NO_STORIES ? [] : [{
+      name: 'Stories' as const,
+      type: 'stories' as const
+    }]), {
       name: 'SharedMedia.Gifts',
       type: 'gifts'
     }, {

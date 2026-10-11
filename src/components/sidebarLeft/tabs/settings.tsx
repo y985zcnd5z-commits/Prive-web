@@ -1,3 +1,4 @@
+import appImManager from '@lib/appImManager';
 import {createSignal, For, onCleanup, onMount, Show} from 'solid-js';
 import ButtonMenuToggle from '@components/buttonMenuToggle';
 import {AppPrivacyAndSecurityTab} from '@components/solidJsTabs/tabs';
@@ -101,12 +102,7 @@ const Settings = () => {
     listenerSetter: tab.listenerSetter,
     direction: 'bottom-left',
     buttonOptions: {ariaLabel: 'MultiAccount.More'},
-    buttons: [{
-      icon: 'edit',
-      text: 'EditAccount.Title',
-      // fresh args on every open, so a failed connected-bot request isn't retained
-      onClick: () => tab.slider.createTab(AppEditProfileTab).open(getEditProfileInitArgs(true))
-    }, {
+    buttons: [{ // Prive: "Edit profile" is a row under the profile header (Profile moved into Settings)
       icon: 'qr',
       text: 'QRCode.Title',
       onClick: () => showMyQrCodePopup()
@@ -390,6 +386,17 @@ const Settings = () => {
         </div>
       </InlinePortal>
       {peerProfileElement}
+      {/* Prive: everything from the former Profile tab lives here, right under the profile header */}
+      <Section>
+        <Row clickable={() => tab.slider.createTab(AppEditProfileTab).open(getEditProfileInitArgs(true))}>
+          <Row.Icon icon="person_filled" />
+          <Row.Title>{i18n('EditAccount.Title')}</Row.Title>
+        </Row>
+        <Row clickable={() => { appImManager.setPeer({peerId: rootScope.myId}); }}>
+          <Row.Icon icon="savedmessages" />
+          <Row.Title>{i18n('SavedMessages')}</Row.Title>
+        </Row>
+      </Section>
       <Section>
         <div class="profile-buttons">
           <For each={subTabConfigs}>

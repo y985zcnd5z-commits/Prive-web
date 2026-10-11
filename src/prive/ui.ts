@@ -8,19 +8,20 @@ import {createEffect, createRoot} from 'solid-js';
 import mediaSizes from '@helpers/mediaSizes';
 import type {AppSidebarLeft} from '@components/sidebarLeft';
 import {AppContactsTab} from '@components/solidJsTabs/tabs';
-import {AppSettingsTab, AppEditProfileTab, getEditProfileInitArgs} from '@components/solidJsTabs';
+import {AppSettingsTab} from '@components/solidJsTabs';
 import {PriveWebsitesTab} from '@/prive/tabs';
-import {loadPrivePrefs, privePrefs, PriveSite} from '@/prive/api';
+import {loadPrivePrefs, privePrefs} from '@/prive/api';
+import {installSiteStories} from '@/prive/siteStories';
+import {installFolderPills} from '@/prive/folderPills';
 
-type TabKey = 'chats' | 'contacts' | 'websites' | 'settings' | 'profile';
+type TabKey = 'chats' | 'contacts' | 'websites' | 'settings'; // Profile lives in Settings (header + rows)
 const SVG: Record<TabKey, string> = {
   chats: '<path d="M12 3.5c-4.97 0-9 3.47-9 7.75 0 2.3 1.17 4.37 3.03 5.79-.13 1.2-.6 2.43-1.53 3.46 1.98-.05 3.66-.8 4.86-1.67.84.2 1.7.3 2.64.3 4.97 0 9-3.47 9-7.88S16.97 3.5 12 3.5z"/>',
   contacts: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20c.6-3.6 3.7-6 7.5-6s6.9 2.4 7.5 6"/>',
   websites: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5M12 3.5C9.6 5.9 8.4 8.7 8.4 12s1.2 6.1 3.6 8.5"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2.8l2 .4.6 2.3 1.6.9 2.2-.8 1.4 1.5-.8 2.2.9 1.6 2.3.6.4 2-.4 2-2.3.6-.9 1.6.8 2.2-1.4 1.5-2.2-.8-1.6.9-.6 2.3-2 .4-2-.4-.6-2.3-1.6-.9-2.2.8-1.4-1.5.8-2.2-.9-1.6-2.3-.6-.4-2 .4-2 2.3-.6.9-1.6-.8-2.2 1.4-1.5 2.2.8 1.6-.9.6-2.3z"/>',
-  profile: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3.2"/><path d="M6.2 18.4c1.2-2.2 3.3-3.4 5.8-3.4s4.6 1.2 5.8 3.4"/>'
 };
-const LABEL: Record<TabKey, string> = {chats: 'Chats', contacts: 'Contacts', websites: 'Websites', settings: 'Settings', profile: 'Profile'};
+const LABEL: Record<TabKey, string> = {chats: 'Chats', contacts: 'Contacts', websites: 'Websites', settings: 'Settings'};
 
 export function installPriveUI(sidebar: AppSidebarLeft) {
   // sign in to Prive with this Telegram account automatically (verified by Telegram via the Prive bot)
@@ -68,7 +69,6 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
     if(key === 'contacts') sidebar.createTab(AppContactsTab).open();
     else if(key === 'websites') sidebar.createTab(PriveWebsitesTab).open();
     else if(key === 'settings') sidebar.createTab(AppSettingsTab).open();
-    else if(key === 'profile') sidebar.createTab(AppEditProfileTab).open(getEditProfileInitArgs(true));
   }
 
   // Arrived from a website's Chat on Prive button: open Websites with that Website Connect chat (the embedded
@@ -99,49 +99,16 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
   window.addEventListener('message', () => setTimeout(update, 0));
   update();
 
-  // ---------- client: website tabs above the chat list (Telegram folder-tab style) ----------
-  const strip = document.createElement('div');
-  strip.className = 'prive-site-tabs';
+  // ---------- website updates as a stories row above the chat list (Telegram Stories are disabled in Prive) ----------
+  const strip = installSiteStories();
+  const pills = installFolderPills(() => select('websites'));
   const place = () => {
-    if(strip.isConnected) return;
+    if(strip.isConnected && pills.isConnected) return;
     const header = document.querySelector('#column-left .item-main .sidebar-header');
-    header?.insertAdjacentElement('afterend', strip);
+    if(!header) return;
+    header.insertAdjacentElement('afterend', pills); // search bar -> All/Channels/Websites/Bots pill -> website stories
+    pills.insertAdjacentElement('afterend', strip);
   };
-  const openSite = (s: PriveSite) => {
-    // like a Telegram Mini App: sheet over the client, no browser chrome
-    import('@/prive/siteSheet').then((m) => m.openSiteSheet(s));
-  };
-  createRoot(() => createEffect(() => {
-    const p = privePrefs();
-    const sites = p.userSites || []; // one Prive for everyone: website tabs whenever the user has saved sites
-    place();
-    strip.replaceChildren();
-    strip.classList.toggle('hide', !sites.length);
-    sites.forEach((s) => {
-      const b = document.createElement('div');
-      b.className = 'prive-site-tab';
-      b.title = s.url;
-      const letter = () => {
-        const i = document.createElement('i');
-        i.textContent = (s.name || '?')[0].toUpperCase();
-        return i;
-      };
-      let icon: HTMLElement = letter();
-      if(s.icon) {
-        const img = document.createElement('img');
-        img.src = s.icon;
-        img.referrerPolicy = 'no-referrer';
-        img.alt = '';
-        img.onerror = () => img.replaceWith(letter());
-        icon = img;
-      }
-      const span = document.createElement('span');
-      
-      span.textContent = s.name;
-      b.append(icon, span);
-      b.addEventListener('click', () => openSite(s));
-      strip.append(b);
-    });
-  }));
+  createRoot(() => createEffect(() => { privePrefs(); place(); window.dispatchEvent(new CustomEvent('prive-prefs')); }));
   setTimeout(place, 1000);
 }

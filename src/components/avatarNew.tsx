@@ -16,7 +16,7 @@ import {
   createComputed
 } from 'solid-js';
 import rootScope from '@lib/rootScope';
-import {NULL_PEER_ID, REPLIES_PEER_ID, HIDDEN_PEER_ID} from '@appManagers/constants';
+import {NULL_PEER_ID, REPLIES_PEER_ID, HIDDEN_PEER_ID, TEST_NO_STORIES} from '@appManagers/constants';
 import {Chat, ChatPhoto, PhotoSize, User, UserProfilePhoto} from '@layer';
 import {getPeerAvatarColorById, getPeerAvatarColorByPeer} from '@appManagers/utils/peers/getPeerColorById';
 import getPeerPhoto from '@appManagers/utils/peers/getPeerPhoto';
@@ -814,7 +814,7 @@ export const AvatarNew = (props: {
 
     const _isForum = !!(peer as Chat.channel)?.pFlags?.forum;
     const _isSubscribed = props.isSubscribed ?? !!(peer as Chat.channel)?.subscription_until_date;
-    const storiesSegmentsResult = withStories && ((peer as User.user | Chat.channel)?.stories_max_id || storyId) && await getStoriesSegments(peerId, storyId);
+    const storiesSegmentsResult = withStories && !TEST_NO_STORIES && ((peer as User.user | Chat.channel)?.stories_max_id || storyId) && await getStoriesSegments(peerId, storyId);
     const storiesSegments = storiesSegmentsResult?.cached ? await storiesSegmentsResult.result : undefined;
     if(!middleware()) {
       return;
