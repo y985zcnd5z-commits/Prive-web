@@ -48,7 +48,7 @@
     })();
 
     // ---------- footer badge ----------
-    var badge = el('div', { id: 'prive-badge' }, '<b>Prive</b> · unofficial Telegram client · not affiliated with Telegram · <a href="prive/SOURCE.txt" target="_blank" rel="noopener">source (GPL-3.0)</a>');
+    var badge = el('div', { id: 'prive-badge' }, '<b>Prive</b> · unofficial Telegram client · not affiliated with Telegram · <a href="https://github.com/y985zcnd5z-commits/prive-web" target="_blank" rel="noopener">source (GPL-3.0)</a>');
     document.body.appendChild(badge);
 
     // ---------- mode chooser (logged out, first screen) ----------

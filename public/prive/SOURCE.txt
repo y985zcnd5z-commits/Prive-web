@@ -1,8 +1,6 @@
-Prive Web — unofficial Telegram client, not affiliated with Telegram.
+Prive Web is an unofficial Telegram client, not affiliated with Telegram.
+It is a modified version of Telegram WebK (https://github.com/morethanwords/tweb), licensed under the GNU GPL v3.
 
-Prive Web is a modified version of Telegram WebK (https://github.com/morethanwords/tweb),
-licensed under the GNU General Public License v3.0 (https://www.gnu.org/licenses/gpl-3.0.html).
-
-Build: e8aee39 (branch prive)
-The complete corresponding source code of this build, including Prive's modifications,
-is available on request from the operator of priveconnect.com.
+Source code:
+  Prive Web:     https://github.com/y985zcnd5z-commits/prive-web
+  Prive Android: https://github.com/y985zcnd5z-commits/prive-android
