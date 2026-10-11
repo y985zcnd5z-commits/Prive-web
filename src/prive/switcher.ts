@@ -143,6 +143,12 @@ export function bindLongPress(el: HTMLElement) {
 
 export function installSwitcher(sidebar: AppSidebarLeft) {
   sidebarRef = sidebar;
+  setSwitchGuard(async(to) => to !== 'prive' || (await import('@/prive/passlock')).requireUnlock());
+  // a "Chat on Prive" link arrived while this device was in the Telegram view with a Prive password: unlock first
+  if(currentView() === 'telegram' && localStorage.getItem('prive_switch_pending')) {
+    localStorage.removeItem('prive_switch_pending');
+    setTimeout(() => switchTo('prive'), 600);
+  }
   // tap on the avatar in the Settings header (capture: before the photo viewer)
   document.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;

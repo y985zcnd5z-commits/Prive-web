@@ -29,3 +29,26 @@ html:not(.night) .prive-switcher-sep{background:rgba(0,0,0,.06)}
 .prive-view-prive .prive-switcher-plus{color:#C9A86A}
 .prive-no-callout,.prive-tabbar-item,.prive-switcher,.prive-switcher *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .prive-switcher-row.hover{background:rgba(127,127,127,.2)}
+
+/* Prive password — Telegram passcode-lock style, Noir. Loaded in both views (the unlock shows in Telegram view). */
+.prive-lock{position:fixed;inset:0;z-index:6000;background:#0A0B12;color:#F3EDE2;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s ease;
+  padding:calc(env(safe-area-inset-top,0px) + 24px) 24px calc(env(safe-area-inset-bottom,0px) + 24px);box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,Roboto,"Segoe UI",sans-serif;
+  background-image:radial-gradient(120% 60% at 50% 0%,rgba(201,168,106,.10),transparent 60%)}
+.prive-lock.show{opacity:1}
+.prive-lock-in{width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.prive-lock-icon{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#0A0B12;background:linear-gradient(135deg,#E6CF9B,#C9A86A 55%,#A8894E);margin-bottom:18px;box-shadow:0 8px 30px rgba(201,168,106,.25)}
+.prive-lock h2{font-size:20px;font-weight:600;margin:0 0 6px}
+.prive-lock-sub{font-size:14px;line-height:1.4;color:#A89F90;margin:0 0 20px;min-height:0}
+.prive-lock form{width:100%;display:flex;flex-direction:column;gap:10px}
+.prive-lock input{width:100%;box-sizing:border-box;height:48px;border-radius:12px;border:1px solid rgba(201,168,106,.22);background:rgba(10,11,18,.45);color:#F3EDE2;font-size:17px;padding:0 14px;outline:none;text-align:center;letter-spacing:.08em}
+.prive-lock input:focus{border-color:#C9A86A;box-shadow:0 0 0 3px rgba(201,168,106,.15)}
+.prive-lock input::placeholder{letter-spacing:0;color:#6E675C}
+.prive-lock-btn{width:100%;height:48px;border:0;border-radius:12px;background:linear-gradient(135deg,#E6CF9B,#C9A86A);color:#0A0B12;font-size:16px;font-weight:600;cursor:pointer;margin-top:4px}
+.prive-lock-btn:disabled{opacity:.6}
+.prive-lock-menu .prive-lock-btn{margin-top:10px}
+.prive-lock-btn.danger{background:rgba(239,67,67,.12);color:#ef6b6b;border:1px solid rgba(239,67,67,.3)}
+.prive-lock-err{min-height:20px;margin:12px 0 0;font-size:14px;color:#ef6b6b}
+.prive-lock-forgot{border:0;background:none;color:#C9A86A;font-size:15px;margin-top:6px;cursor:pointer;padding:8px}
+.prive-lock-cancel{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;border:0;background:none;color:#C9A86A;font-size:17px;padding:8px 10px;cursor:pointer}
+.prive-lock-in.shake{animation:prive-shake .42s cubic-bezier(.36,.07,.19,.97)}
+@keyframes prive-shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}

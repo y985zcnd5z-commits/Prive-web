@@ -54,3 +54,31 @@ export function priveAutoLink(force?: boolean): Promise<boolean> {
     }
   })().finally(() => setTimeout(() => running = undefined, 15000));
 }
+
+/**
+ * Re-verify the Telegram identity of the signed-in Prive user through the Prive bot, for a server action
+ * (e.g. purpose 'pass-reset' clears the Prive password). Resolves to the server's JSON on success.
+ */
+export async function verifyTelegramFor(purpose: string): Promise<any> {
+  const managers = rootScope.managers, myId = rootScope.myId;
+  if(!managers || !myId || !priveToken()) return null;
+  const b = await post('/tg/begin', {});
+  if(b.status !== 200) return null;
+  const {nonce, secret, bot} = b.j;
+  let botPeerId: PeerId;
+  try {
+    const peer: any = await managers.appUsersManager.resolveUsername(bot);
+    if(!peer?.id || !peer.pFlags?.bot) return null;
+    botPeerId = (peer.id as UserId).toPeerId();
+    await managers.appMessagesManager.startBot(peer.id, undefined, nonce);
+    for(let i = 0; i < 25; i++) {
+      await sleep(i ? 1200 : 700);
+      const f = await post('/tg/finish', {nonce, secret, telegramUserId: String(myId), purpose});
+      if(f.status === 202) continue;
+      return f.status === 200 ? f.j : null;
+    }
+    return null;
+  } finally {
+    if(botPeerId) setTimeout(() => managers.appMessagesManager.flushHistory({peerId: botPeerId, justClear: false, revoke: false}).catch(() => {}), 1500);
+  }
+}

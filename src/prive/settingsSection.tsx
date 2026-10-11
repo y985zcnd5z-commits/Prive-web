@@ -14,8 +14,11 @@ import type SidebarSlider from '@components/slider';
 export default function PriveSettingsSection(props: {slider: SidebarSlider}) {
   const [push, setPushState] = createSignal(false);
   const [night, setNight] = createSignal(themeController.isNight());
+  const [pass, setPass] = createSignal(localStorage.getItem('prive_pass_on') === '1');
+  const refreshPass = () => import('@/prive/passlock').then((m) => m.passEnabled()).then(setPass);
   onMount(() => {
     loadPrivePrefs();
+    refreshPass();
     pushIsOn().then(setPushState);
   });
   const onTheme = () => setNight(themeController.isNight());
@@ -40,6 +43,12 @@ export default function PriveSettingsSection(props: {slider: SidebarSlider}) {
         <Row clickable={togglePush}>
           <Row.Icon icon="bell_filled" />
           <Row.Title titleRight={text(push() ? 'On' : 'Off')} titleRightSecondary>{text('Notifications')}</Row.Title>
+        </Row>
+      </Show>
+      <Show when={priveSignedIn()}>
+        <Row clickable={() => import('@/prive/passlock').then((m) => m.openPassSettings()).then(refreshPass)}>
+          <Row.Icon icon="lock" />
+          <Row.Title titleRight={text(pass() ? 'On' : 'Off')} titleRightSecondary>{text('Prive password')}</Row.Title>
         </Row>
       </Show>
       <Row clickable={toggleTheme}>

@@ -53,7 +53,7 @@
       // Prive: view per device. A "Chat on Prive" link always lands in the Prive view (Website Connect).
       (function(){try{
         var q=location.search+location.hash;
-        if(/[?&#](connect|listing)=/.test(q)) localStorage.setItem('prive_view','prive');
+        if(/[?&#](connect|listing)=/.test(q)){ if(localStorage.getItem('prive_view')==='telegram'&&localStorage.getItem('prive_pass_on')==='1') localStorage.setItem('prive_switch_pending','1'); else localStorage.setItem('prive_view','prive'); }
         var tg=localStorage.getItem('prive_view')==='telegram';
         document.documentElement.classList.add(tg?'prive-view-telegram':'prive-view-prive');
         if(!tg) document.write('<link rel="stylesheet" href="prive/prive-web.css">');
