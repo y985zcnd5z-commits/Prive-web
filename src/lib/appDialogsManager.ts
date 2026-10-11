@@ -89,6 +89,7 @@ import showSharedFolderInvitePopup from '@components/popups/sharedFolderInvite';
 import showChatPreviewPopup, {chatPreviewAnchorFromDialogRow} from '@components/popups/chatPreview';
 import showLimitPopup from '@components/popups/limit';
 import StoriesList from '@components/stories/list';
+import {TEST_NO_STORIES} from '@appManagers/constants';
 import {render} from 'solid-js/web';
 import {avatarNew} from '@components/avatarNew';
 import Icon from '@components/icon';
@@ -1191,6 +1192,7 @@ export class AppDialogsManager {
   }
 
   private renderStories() {
+    if(TEST_NO_STORIES) return; // Prive view: website circles instead
     this.disposeStories = render(() => this._renderStories(), this.storiesListContainer);
   }
 

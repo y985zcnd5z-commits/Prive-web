@@ -1,4 +1,5 @@
 import {createEffect, createRoot, createSignal, on} from 'solid-js';
+import {IS_TELEGRAM_VIEW} from '@/prive/view';
 import appImManager from '@lib/appImManager';
 import rootScope from '@lib/rootScope';
 import {createSearchGroup, SearchGroup} from '@components/searchGroup';
@@ -760,11 +761,18 @@ export class AppSidebarLeft extends SidebarSlider {
       // Prive: the single Websites entry (Website Connect chats, saved websites, administrator tools)
       icon: 'webview',
       regularText: 'Websites',
+      verify: () => !IS_TELEGRAM_VIEW,
       onClick: () => {
         closeTabsBefore(() => {
           import('@/prive/tabs').then(({PriveWebsitesTab}) => this.createTab(PriveWebsitesTab).open());
         });
       }
+    }, {
+      // Prive: Telegram view -> back to Prive (same account, no re-login)
+      icon: 'webview',
+      regularText: 'Switch to Prive',
+      verify: () => IS_TELEGRAM_VIEW,
+      onClick: () => { import('@/prive/switcher').then((m) => m.switchTo('prive')); }
     }, {
       icon: 'phone',
       text: 'Calls',

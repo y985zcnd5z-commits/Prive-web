@@ -1,4 +1,5 @@
 import type {Channel} from '@appManagers/appChatsManager';
+import {IS_TELEGRAM_VIEW} from '@/prive/view';
 import type {AppSidebarRight} from '@components/sidebarRight';
 import type Chat from '@components/chat/chat';
 import {RIGHT_COLUMN_ACTIVE_CLASSNAME} from '@components/sidebarRight';
@@ -223,7 +224,7 @@ export default class ChatTopbar {
       this.btnCall,
       this.btnGroupCall,
       this.btnGroupCallMenu,
-      this.btnPriveTranslate,
+      IS_TELEGRAM_VIEW ? null : this.btnPriveTranslate,
       this.btnSearch,
       this.btnLogFilters,
       this.btnMore

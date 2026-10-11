@@ -46,6 +46,15 @@ export const FOLDER_ID_ARCHIVE: REAL_FOLDER_ID = 1;
 export const REAL_FOLDERS: Set<number> = new Set([FOLDER_ID_ALL, FOLDER_ID_ARCHIVE]);
 export const START_LOCAL_ID = Math.max(...Array.from(REAL_FOLDERS)) + 1 as MyDialogFilter['localId'];
 
-export const TEST_NO_STORIES = true; // Prive: Telegram Stories are disabled everywhere (website updates take their place)
+// Prive: Telegram Stories are hidden in the Prive view (website updates take their place) and shown in the Telegram view.
+// Workers have no localStorage: they always keep stories data, the UI (main thread) decides whether to show it.
+export const TEST_NO_STORIES = (() => {
+  try {
+    if(typeof window === 'undefined') return false;
+    return window.localStorage.getItem('prive_view') !== 'telegram';
+  } catch(e) {
+    return false;
+  }
+})();
 export const TEST_NO_SAVED = false;
 export const TEST_NO_STREAMING = false;

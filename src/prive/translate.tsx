@@ -3,6 +3,7 @@
  * that chat are translated into it; the choice is remembered per chat (locally and on the Prive server).
  * Engine: Telegram's own translation when the account has Premium, otherwise the Prive server (/api/translate).
  */
+import {IS_TELEGRAM_VIEW} from '@/prive/view';
 import {createRoot, createSignal} from 'solid-js';
 import showPickUserPopup from '@components/popups/pickUser';
 import RowTsx from '@components/rowTsx';
@@ -28,7 +29,7 @@ const store = createRoot(() => {
 });
 
 /** Lower-case language code chosen for this Telegram peer, or undefined when Prive translation is off. */
-export const priveChatLang = (peerId: PeerId): string | undefined => store.chats()['tg:' + peerId]?.toLowerCase();
+export const priveChatLang = (peerId: PeerId): string | undefined => IS_TELEGRAM_VIEW ? undefined : store.chats()['tg:' + peerId]?.toLowerCase();
 
 let languages: Lang[];
 async function loadLanguages(): Promise<Lang[]> {

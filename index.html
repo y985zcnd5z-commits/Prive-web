@@ -49,7 +49,18 @@
     <link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="prive/splash-1242x2208.png">
     <link rel="apple-touch-startup-image" media="screen and (device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="prive/splash-1206x2622.png">
     <link rel="apple-touch-startup-image" media="screen and (device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="prive/splash-1320x2868.png">
-    <link rel="stylesheet" href="prive/prive-web.css">
+    <script>
+      // Prive: view per device. A "Chat on Prive" link always lands in the Prive view (Website Connect).
+      (function(){try{
+        var q=location.search+location.hash;
+        if(/[?&#](connect|listing)=/.test(q)) localStorage.setItem('prive_view','prive');
+        var tg=localStorage.getItem('prive_view')==='telegram';
+        document.documentElement.classList.add(tg?'prive-view-telegram':'prive-view-prive');
+        if(!tg) document.write('<link rel="stylesheet" href="prive/prive-web.css">');
+      }catch(e){document.write('<link rel="stylesheet" href="prive/prive-web.css">');}})();
+    </script>
+    <link rel="stylesheet" href="prive/prive-switch.css">
+    <link rel="stylesheet" href="prive/prive-safe.css">
   </head>
   <body class="animation-level-2 has-auth-pages rounded-sections">
     <!--[if IE]>

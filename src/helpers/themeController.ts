@@ -102,7 +102,18 @@ const appColorMap: {[name in AppColorName]: AppColor} = {
   'input-search-background-color': {}
 };
 
-const colorMap: {
+import {IS_TELEGRAM_VIEW} from '@/prive/view';
+const TELEGRAM_COLORS: {[name in AppTheme['name']]?: {[name in AppColorName]?: string}} = { // stock WebK (Telegram view)
+  day: {'primary-color': '#3390ec', 'message-out-primary-color': '#5CA853', 'message-background-color': '#ffffff', 'surface-color': '#ffffff', 'danger-color': '#df3f40', 'primary-text-color': '#000000', 'secondary-text-color': '#707579', 'saved-color': '#359AD4', 'green-color': '#70b768', 'background-color': '#f4f4f5', 'body-background-color': '#ffffff', 'border-color': '#dfe1e5', 'secondary-color': '#c4c9cc', 'link-color': '#00488f', 'input-search-background-color': '#ffffff'},
+  night: {'primary-color': '#8774E1', 'message-out-primary-color': '#8774E1', 'message-background-color': '#212121', 'surface-color': '#212121', 'danger-color': '#ff595a', 'primary-text-color': '#ffffff', 'secondary-text-color': '#aaaaaa', 'saved-color': '#8774E1', 'green-color': '#5CC85E', 'background-color': '#181818', 'body-background-color': '#181818', 'border-color': '#0f0f0f', 'secondary-color': '#707579', 'link-color': '#8774E1', 'input-search-background-color': '#181818'}
+};
+// stock accent / bubble / wallpaper per base theme, used instead of the stored (Prive) theme settings in Telegram view
+const TELEGRAM_THEME_SETTINGS: {[base: string]: {accent_color: number, message_colors: number[], wp?: number[]}} = {
+  baseThemeClassic: {accent_color: 0x3390ec, message_colors: [0x5CA853]},
+  baseThemeNight: {accent_color: 0x8774E1, message_colors: [0x8774E1], wp: [0xfec496, 0xdd6cb9, 0x962fbf, 0x4f5bd5]},
+  baseThemeDay: {accent_color: 0x2D7ED5, message_colors: [0x2D7ED5]}
+};
+const PRIVE_COLORS: {
   [name in AppTheme['name']]?: {
     [name in AppColorName]?: string
   }
@@ -186,6 +197,7 @@ const colorMap: {
     'input-search-background-color': '#FFFFFF'
   }
 };
+const colorMap = IS_TELEGRAM_VIEW ? {...PRIVE_COLORS, ...TELEGRAM_COLORS} : PRIVE_COLORS;
 
 const themeNameToBaseTheme: {[name in Exclude<AppTheme['name'], 'system'>]: BaseTheme['_']} = {
   day: 'baseThemeClassic',
@@ -736,6 +748,17 @@ export class ThemeController {
   public getThemeSettings(theme: Theme, isNight?: boolean): ThemeSettings;
   public getThemeSettings(theme: Theme | AppTheme, isNight?: boolean): ThemeSettings | AppThemeSettings;
   public getThemeSettings(theme: Theme | AppTheme, isNight?: boolean): ThemeSettings | AppThemeSettings {
+    const s = this._getThemeSettings(theme, isNight);
+    if(!IS_TELEGRAM_VIEW || !s) return s;
+    const tg = TELEGRAM_THEME_SETTINGS[s.base_theme?._];
+    if(!tg) return s;
+    const out: any = {...s, accent_color: tg.accent_color, message_colors: tg.message_colors, outbox_accent_color: undefined};
+    const wp: any = (s as any).wallpaper;
+    if(tg.wp && wp?.settings) out.wallpaper = {...wp, settings: {...wp.settings, background_color: tg.wp[0], second_background_color: tg.wp[1], third_background_color: tg.wp[2], fourth_background_color: tg.wp[3]}};
+    return out;
+  }
+
+  private _getThemeSettings(theme: Theme | AppTheme, isNight?: boolean): ThemeSettings | AppThemeSettings {
     if(!theme?.settings) return undefined;
     // Legacy state may have stored a single ThemeSettings object instead of an array;
     // pass it through unchanged so reads keep working until the next save migrates it.

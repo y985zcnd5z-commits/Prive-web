@@ -19,6 +19,7 @@ import rootScope from '@lib/rootScope';
 import Row from '@components/rowTsx';
 import pause from '@helpers/schedulers/pause';
 import PriveSettingsSection from '@/prive/settingsSection';
+import {IS_TELEGRAM_VIEW} from '@/prive/view';
 import {AppActiveSessionsTab} from '@components/solidJsTabs/tabs';
 import {i18n, LangPackKey} from '@lib/langPack';
 import {SliderSuperTabConstructable, SliderSuperTabEventable} from '@components/sliderTab';
@@ -102,7 +103,11 @@ const Settings = () => {
     listenerSetter: tab.listenerSetter,
     direction: 'bottom-left',
     buttonOptions: {ariaLabel: 'MultiAccount.More'},
-    buttons: [{ // Prive: "Edit profile" is a row under the profile header (Profile moved into Settings)
+    buttons: [...(IS_TELEGRAM_VIEW ? [{
+      icon: 'edit' as const,
+      text: 'EditAccount.Title' as LangPackKey,
+      onClick: () => tab.slider.createTab(AppEditProfileTab).open(getEditProfileInitArgs(true))
+    }] : []), { // Prive: "Edit profile" is a row under the profile header (Profile moved into Settings)
       icon: 'qr',
       text: 'QRCode.Title',
       onClick: () => showMyQrCodePopup()
@@ -387,7 +392,7 @@ const Settings = () => {
       </InlinePortal>
       {peerProfileElement}
       {/* Prive: everything from the former Profile tab lives here, right under the profile header */}
-      <Section>
+      <Show when={!IS_TELEGRAM_VIEW}><Section>
         <Row clickable={() => tab.slider.createTab(AppEditProfileTab).open(getEditProfileInitArgs(true))}>
           <Row.Icon icon="person_filled" />
           <Row.Title>{i18n('EditAccount.Title')}</Row.Title>
@@ -396,7 +401,7 @@ const Settings = () => {
           <Row.Icon icon="savedmessages" />
           <Row.Title>{i18n('SavedMessages')}</Row.Title>
         </Row>
-      </Section>
+      </Section></Show>
       <Section>
         <div class="profile-buttons">
           <For each={subTabConfigs}>
@@ -425,7 +430,7 @@ const Settings = () => {
           </Row>
         </div>
       </Section>
-      <PriveSettingsSection slider={tab.slider} />
+      <Show when={!IS_TELEGRAM_VIEW}><PriveSettingsSection slider={tab.slider} /></Show>
       <Show when={!premiumBlocked()}>
         <Section>
           <Row clickable={() => showPremiumPopup()}>

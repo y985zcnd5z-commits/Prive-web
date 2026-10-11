@@ -13,6 +13,8 @@ import {PriveWebsitesTab} from '@/prive/tabs';
 import {loadPrivePrefs, privePrefs} from '@/prive/api';
 import {installSiteStories} from '@/prive/siteStories';
 import {installFolderPills} from '@/prive/folderPills';
+import {installSwitcher, bindLongPress} from '@/prive/switcher';
+import {IS_TELEGRAM_VIEW} from '@/prive/view';
 
 type TabKey = 'chats' | 'contacts' | 'websites' | 'settings'; // Profile lives in Settings (header + rows)
 const SVG: Record<TabKey, string> = {
@@ -26,6 +28,8 @@ const LABEL: Record<TabKey, string> = {chats: 'Chats', contacts: 'Contacts', web
 export function installPriveUI(sidebar: AppSidebarLeft) {
   // sign in to Prive with this Telegram account automatically (verified by Telegram via the Prive bot)
   setTimeout(() => import('@/prive/tglink').then((m) => m.priveAutoLink()), 1500);
+  installSwitcher(sidebar);
+  if(IS_TELEGRAM_VIEW) return; // Telegram view: stock WebK, nothing else from Prive
   document.body.classList.add('prive-ui');
   loadPrivePrefs();
   import('@/prive/translate').then((m) => {
@@ -52,6 +56,7 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
     b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${SVG[key]}</svg><span>${LABEL[key]}</span>`;
     b.addEventListener('click', () => select(key));
     buttons[key] = b;
+    if(key === 'settings') bindLongPress(b); // like Telegram: long-press Settings = account switcher
     bar.append(b);
   });
   document.body.append(bar);
