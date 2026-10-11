@@ -27,3 +27,5 @@ html:not(.night) .prive-switcher-badge{box-shadow:0 0 0 2px #fafafa}
 html:not(.night) .prive-switcher-sep{background:rgba(0,0,0,.06)}
 .prive-switcher-plus{width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex:none;color:#2AABEE}
 .prive-view-prive .prive-switcher-plus{color:#C9A86A}
+.prive-no-callout,.prive-tabbar-item,.prive-switcher,.prive-switcher *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.prive-switcher-row.hover{background:rgba(127,127,127,.2)}

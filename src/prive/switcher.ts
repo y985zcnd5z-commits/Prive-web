@@ -44,7 +44,7 @@ export async function switchTo(view: PriveView) {
 }
 
 export function openSwitcher(anchor?: HTMLElement | {x: number, y: number}) {
-  if(open) { close(); return; }
+  if(open) { if(Date.now() >= ignoreUntil) close(); return; }
   const cur = currentView();
   const wrap = document.createElement('div');
   wrap.className = 'prive-switcher' + (cur === 'telegram' ? ' is-tg' : '');
@@ -64,7 +64,7 @@ export function openSwitcher(anchor?: HTMLElement | {x: number, y: number}) {
     t.firstElementChild.textContent = label; t.lastElementChild.textContent = myName();
     const c = document.createElement('span'); c.className = 'prive-switcher-check'; if(view === cur) c.innerHTML = CHECK;
     r.append(av, t, c);
-    r.addEventListener('click', () => { close(); switchTo(view); });
+    r.addEventListener('click', () => { if(Date.now() < ignoreUntil) return; close(); switchTo(view); });
     return r;
   };
   menu.append(row('prive', 'Prive', '<i>P</i>'), row('telegram', 'Telegram', TG));
@@ -72,11 +72,12 @@ export function openSwitcher(anchor?: HTMLElement | {x: number, y: number}) {
   const add = document.createElement('button');
   add.type = 'button'; add.className = 'prive-switcher-row prive-switcher-add';
   add.innerHTML = `<span class="prive-switcher-plus">${PLUS}</span><span class="prive-switcher-text"><b>Add Account</b></span>`;
-  add.addEventListener('click', (e) => { close(); sidebarRef?.addAccount(e as MouseEvent); });
+  add.addEventListener('click', (e) => { if(Date.now() < ignoreUntil) return; close(); sidebarRef?.addAccount(e as MouseEvent); });
   menu.append(add);
   wrap.append(menu);
-  wrap.addEventListener('click', (e) => { if(e.target === wrap) close(); });
-  wrap.addEventListener('contextmenu', (e) => { e.preventDefault(); close(); });
+  wrap.addEventListener('click', (e) => { if(Date.now() < ignoreUntil) return; if(e.target === wrap) close(); });
+  wrap.addEventListener('contextmenu', (e) => { e.preventDefault(); if(Date.now() < ignoreUntil) return; close(); });
+  wrap.addEventListener('touchend', (e) => { if(Date.now() < ignoreUntil && e.target === wrap) e.preventDefault(); }, {passive: false});
   document.addEventListener('keydown', function esc(e) { if(e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
   document.body.append(wrap);
   // position: above a bottom anchor (tab bar), below a top anchor (avatar/hamburger), clamped to the viewport
@@ -95,15 +96,49 @@ export function openSwitcher(anchor?: HTMLElement | {x: number, y: number}) {
   setTimeout(() => { if(!wrap.isConnected) mw.destroy(); }, 60e3);
 }
 
-/** long-press (touch, 450ms) or right-click on el opens the switcher; a short tap stays a normal click */
+/** Clicks/contextmenus that are just the tail of the gesture which opened the popup are ignored until then. */
+let ignoreUntil = 0;
+const settle = (ms = 650) => { ignoreUntil = Date.now() + ms; };
+
+/**
+ * Long-press (touch or mouse, 450ms) or right-click on el opens the switcher, like Telegram's Settings tab.
+ * The popup stays open after the finger lifts; sliding the finger onto an option and releasing selects it.
+ * A short tap stays a normal click.
+ */
 export function bindLongPress(el: HTMLElement) {
-  let t: number, fired = false;
-  el.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); openSwitcher(el); }, true);
-  el.addEventListener('touchstart', () => { fired = false; t = window.setTimeout(() => { fired = true; navigator.vibrate?.(10); openSwitcher(el); }, 450); }, {passive: true});
+  el.classList.add('prive-no-callout');
+  let t: number, fired = false, hover: HTMLElement;
+  const fire = () => { fired = true; settle(); navigator.vibrate?.(10); if(!open) openSwitcher(el); };
   const cancel = () => clearTimeout(t);
-  el.addEventListener('touchmove', cancel, {passive: true});
-  el.addEventListener('touchend', (e) => { cancel(); if(fired) e.preventDefault(); });
-  el.addEventListener('click', (e) => { if(fired) { e.stopImmediatePropagation(); e.preventDefault(); fired = false; } }, true);
+  el.addEventListener('contextmenu', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if(fired || Date.now() < ignoreUntil) return; // the long-press already opened it (mobile fires contextmenu too)
+    settle(); if(!open) openSwitcher(el);
+  }, true);
+  // touch
+  el.addEventListener('touchstart', () => { fired = false; hover = undefined; cancel(); t = window.setTimeout(fire, 450); }, {passive: true});
+  el.addEventListener('touchmove', (e) => {
+    if(!fired) { cancel(); return; }
+    const p = e.touches[0];
+    const row = (document.elementFromPoint(p.clientX, p.clientY) as HTMLElement)?.closest?.('.prive-switcher-row') as HTMLElement;
+    if(row !== hover) { hover?.classList.remove('hover'); row?.classList.add('hover'); hover = row; }
+    e.preventDefault();
+  }, {passive: false});
+  el.addEventListener('touchend', (e) => {
+    cancel();
+    if(!fired) return;
+    e.preventDefault(); // no synthetic click on the tab or the overlay
+    settle();
+    if(hover) { const r = hover; hover.classList.remove('hover'); hover = undefined; ignoreUntil = 0; r.click(); }
+  }, {passive: false});
+  el.addEventListener('touchcancel', cancel, {passive: true});
+  // mouse long-press (desktop)
+  el.addEventListener('mousedown', (e) => { if(e.button !== 0 || (e as any).sourceCapabilities?.firesTouchEvents) return; fired = false; cancel(); t = window.setTimeout(fire, 450); });
+  el.addEventListener('mouseup', () => { cancel(); if(fired) settle(); });
+  el.addEventListener('mouseleave', cancel);
+  el.addEventListener('click', (e) => {
+    if(fired || Date.now() < ignoreUntil) { e.stopImmediatePropagation(); e.preventDefault(); fired = false; }
+  }, true);
 }
 
 export function installSwitcher(sidebar: AppSidebarLeft) {
