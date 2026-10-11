@@ -17,8 +17,11 @@
     var q = new URLSearchParams(location.search), site = q.get('connect');
     if (!site || !/^[\w.-]{1,80}$/.test(site)) return;
     var listing = q.get('listing'); if (listing && !/^[\w.-]{1,80}$/.test(listing)) listing = null;
-    localStorage.setItem('prive_connect', JSON.stringify({ site: site, listing: listing, at: Date.now() }));
-    q.delete('connect'); q.delete('listing');
+    // the exact page the Chat on Prive button was on (prive-connect.js), shown as a source card in the chat
+    var page = q.get('page'), ptitle = (q.get('ptitle') || '').slice(0, 140);
+    if (page && !/^https?:\/\//i.test(page)) page = null; if (page) page = page.slice(0, 600);
+    localStorage.setItem('prive_connect', JSON.stringify({ site: site, listing: listing, page: page || null, ptitle: page ? ptitle : null, at: Date.now() }));
+    q.delete('connect'); q.delete('listing'); q.delete('page'); q.delete('ptitle');
     history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
   })();
   var isTouchSmall = function () { return (navigator.maxTouchPoints || 0) > 0 || matchMedia('(max-width: 820px), (pointer: coarse)').matches; };

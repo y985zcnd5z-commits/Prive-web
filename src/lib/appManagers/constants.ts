@@ -44,14 +44,16 @@ export const CHANNEL_CUTOFF_RETRY_LIMIT = 5;
 export const FOLDER_ID_ALL: REAL_FOLDER_ID = 0;
 export const FOLDER_ID_ARCHIVE: REAL_FOLDER_ID = 1;
 export const REAL_FOLDERS: Set<number> = new Set([FOLDER_ID_ALL, FOLDER_ID_ARCHIVE]);
+// Prive: a device-local, never-synced "Channels" filter (the Channels pill). Not one of the user's Telegram folders.
+export const PRIVE_CHANNELS_FILTER_ID = 99999;
 export const START_LOCAL_ID = Math.max(...Array.from(REAL_FOLDERS)) + 1 as MyDialogFilter['localId'];
 
-// Prive: Telegram Stories are hidden in the Prive view (website updates take their place) and shown in the Telegram view.
+// Prive: Telegram Stories are hidden (website updates take their place).
 // Workers have no localStorage: they always keep stories data, the UI (main thread) decides whether to show it.
 export const TEST_NO_STORIES = (() => {
   try {
     if(typeof window === 'undefined') return false;
-    return window.localStorage.getItem('prive_view') !== 'telegram';
+    return true; // Prive only: Telegram Stories are always replaced by website updates
   } catch(e) {
     return false;
   }

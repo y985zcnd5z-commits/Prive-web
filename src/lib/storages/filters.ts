@@ -6,7 +6,7 @@ import copy from '@helpers/object/copy';
 import {AppManager} from '@appManagers/manager';
 import findAndSplice from '@helpers/array/findAndSplice';
 import assumeType from '@helpers/assumeType';
-import {FOLDER_ID_ALL, FOLDER_ID_ARCHIVE, REAL_FOLDERS, REAL_FOLDER_ID, START_LOCAL_ID} from '@appManagers/constants';
+import {FOLDER_ID_ALL, FOLDER_ID_ARCHIVE, REAL_FOLDERS, REAL_FOLDER_ID, START_LOCAL_ID, PRIVE_CHANNELS_FILTER_ID} from '@appManagers/constants';
 import noop from '@helpers/noop';
 import makeError from '@helpers/makeError';
 import indexOfAndSplice from '@helpers/array/indexOfAndSplice';
@@ -42,6 +42,16 @@ export default class FiltersStorage extends AppManager {
   private filtersArr: Array<MyDialogFilter>;
   private localFilters: {[filterId: string]: MyDialogFilter};
   private localId: number;
+  /**
+   * Prive: the Channels pill. A local filter (broadcast channels, not archived) that the dialogs storage indexes
+   * and pages like a folder, so the chat list is a normal virtual list of channel rows. Kept out of `filters`,
+   * so it is never shown as a folder, saved, or sent to Telegram.
+   */
+  private priveChannelsFilter: MyDialogFilter = {
+    ...copy(LOCAL_FILTER), id: PRIVE_CHANNELS_FILTER_ID, localId: PRIVE_CHANNELS_FILTER_ID,
+    title: {_: 'textWithEntities', text: 'Channels', entities: []},
+    pFlags: {broadcasts: true, exclude_archived: true}
+  } as any as MyDialogFilter;
   private reloadedPeerIds: Set<PeerId>;
   /**
    * `messages.dialogFilters.tags_enabled`: whether the chat list shows each chat's folders under
@@ -298,19 +308,20 @@ export default class FiltersStorage extends AppManager {
   }
 
   public testDialogForFilterId(dialog: Dialog, filterId: number) {
-    return this.testDialogForFilter(dialog, this.filters[filterId]);
+    return this.testDialogForFilter(dialog, this.getFilter(filterId));
   }
 
   public getFilter(filterId: number) {
-    return this.filters[filterId];
+    return filterId === PRIVE_CHANNELS_FILTER_ID ? this.priveChannelsFilter : this.filters[filterId];
   }
 
+  /** all filters the dialogs are indexed for (the user's folders + Prive's local Channels filter) */
   public getFilters() {
-    return this.filters;
+    return {...this.filters, [PRIVE_CHANNELS_FILTER_ID]: this.priveChannelsFilter};
   }
 
   public clearFilters() {
-    const filters = this.getFilters();
+    const filters = this.filters;
     for(const filterId in filters) { // delete filters
       if(REAL_FOLDERS.has(+filterId)) {
         continue;

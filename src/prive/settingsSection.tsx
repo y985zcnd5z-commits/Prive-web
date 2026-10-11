@@ -48,7 +48,7 @@ export default function PriveSettingsSection(props: {slider: SidebarSlider}) {
       <Show when={priveSignedIn()}>
         <Row clickable={() => import('@/prive/passlock').then((m) => m.openPassSettings()).then(refreshPass)}>
           <Row.Icon icon="lock" />
-          <Row.Title titleRight={text(pass() ? 'On' : 'Off')} titleRightSecondary>{text('Prive password')}</Row.Title>
+          <Row.Title titleRight={text(pass() ? 'Change' : 'Set up')} titleRightSecondary>{text('Prive password')}</Row.Title>
         </Row>
       </Show>
       <Row clickable={toggleTheme}>

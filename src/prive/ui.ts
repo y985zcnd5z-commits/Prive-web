@@ -13,8 +13,6 @@ import {PriveWebsitesTab} from '@/prive/tabs';
 import {loadPrivePrefs, privePrefs} from '@/prive/api';
 import {installSiteStories} from '@/prive/siteStories';
 import {installFolderPills} from '@/prive/folderPills';
-import {installSwitcher, bindLongPress} from '@/prive/switcher';
-import {IS_TELEGRAM_VIEW} from '@/prive/view';
 
 type TabKey = 'chats' | 'contacts' | 'websites' | 'settings'; // Profile lives in Settings (header + rows)
 const SVG: Record<TabKey, string> = {
@@ -28,10 +26,21 @@ const LABEL: Record<TabKey, string> = {chats: 'Chats', contacts: 'Contacts', web
 export function installPriveUI(sidebar: AppSidebarLeft) {
   // sign in to Prive with this Telegram account automatically (verified by Telegram via the Prive bot)
   setTimeout(() => import('@/prive/tglink').then((m) => m.priveAutoLink()), 1500);
-  installSwitcher(sidebar);
-  if(IS_TELEGRAM_VIEW) { // Telegram view: stock WebK plus Telegram's own bottom tabs (no Websites)
-    installTabBar(sidebar, ['chats', 'contacts', 'settings']);
-    return;
+  import('@/prive/passlock').then((m) => m.installAppLock()); // mandatory Prive password: set once, asked on every open
+  // a Website Connect notification / old /app link: open that chat in the Websites tab once Prive is unlocked
+  // advertiser invite (/app/?claim= link) or an advertiser offer from the site's Identity Sync (Partner API): show the
+  // one-time "Accept & link my listings" consent (autosite-ui.js) in the Prive frame once unlocked
+  const pcl = new URLSearchParams(location.search).get('prive_claim');
+  import('@/prive/passlock').then((pl) => pl.onceUnlocked(async() => {
+    const m = await import('@/prive/websitesTab');
+    if(pcl && /^[\w-]{6,80}$/.test(pcl)) return m.openAdvertiserInvite(pcl);
+    m.checkCreatorOffers();
+  }));
+  const po = new URLSearchParams(location.search).get('prive_open');
+  if(pcl && !po) history.replaceState(null, '', location.pathname);
+  if(po) {
+    history.replaceState(null, '', location.pathname);
+    import('@/prive/passlock').then((pl) => pl.onceUnlocked(() => import('@/prive/websitesTab').then((m) => m.openWebsiteChats(po))));
   }
   document.body.classList.add('prive-ui');
   loadPrivePrefs();
@@ -70,11 +79,11 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
   setTimeout(place, 1000);
 }
 
-/** Floating frosted bottom tab bar (mobile layout only). Prive view: Noir glass with Websites; Telegram view: stock colours. */
+/** Floating frosted bottom tab bar (mobile layout only): Noir glass. */
 function installTabBar(sidebar: AppSidebarLeft, keys: TabKey[]) {
   const bar = document.createElement('nav');
   bar.className = 'prive-tabbar';
-  bar.setAttribute('aria-label', IS_TELEGRAM_VIEW ? 'Tabs' : 'Prive');
+  bar.setAttribute('aria-label', 'Prive');
   let active: TabKey = 'chats';
   const buttons = {} as Record<TabKey, HTMLButtonElement>;
   keys.forEach((key) => {
@@ -84,7 +93,6 @@ function installTabBar(sidebar: AppSidebarLeft, keys: TabKey[]) {
     b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${SVG[key]}</svg><span>${LABEL[key]}</span>`;
     b.addEventListener('click', () => select(key));
     buttons[key] = b;
-    if(key === 'settings') bindLongPress(b); // like Telegram: long-press Settings = account switcher
     bar.append(b);
   });
   document.body.append(bar);

@@ -187,7 +187,6 @@ html:not(.night) .prive-sheet{--ps-bg:#f7f5f0;--ps-fg:#0A0B12;--ps-muted:#5B6475
 html:not(.night) .prive-pills{background:rgba(10,11,18,.06)}
 html:not(.night) .prive-pills button{color:rgba(10,11,18,.72)}
 html:not(.night) .prive-pills button.active{background:#fff;color:#0A0B12;box-shadow:0 1px 3px rgba(10,11,18,.12)}
-.chatlist-chat.prive-filtered{display:none!important}
 .prive-filter-empty{padding:40px 16px;text-align:center;color:var(--secondary-text-color);font-size:15px}
 
 /* ---------- glass bottom bar: lower, lighter, stronger blur (Telegram iOS) ---------- */
@@ -212,3 +211,80 @@ html:not(.night) .prive-pills.prive-pills-v2 button{background:rgba(10,11,18,.05
 html:not(.night) .prive-pills.prive-pills-v2 button.active{background:rgba(176,141,76,.16);color:#7d5f22;border-color:rgba(176,141,76,.5)}
 .prive-pills.prive-pills-v2 .prive-pill-filter{flex:none;max-width:none}
 .prive-pills.prive-pills-v2 .prive-pill-site{flex:0 1 auto;max-width:none}
+/* pill row with up to 4 websites: scroll sideways instead of squeezing the names */
+.prive-pills.prive-pills-v2{margin-left:0;margin-right:0;padding:0 12px;scroll-padding:0 12px;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x}
+.prive-pills.prive-pills-v2 .prive-pill-site{flex:none;max-width:none}
+.prive-pills.prive-pills-v2 .prive-pill-site .prive-pill-label{max-width:11em}
+.prive-pills.prive-pills-v2::after{content:"";flex:none;width:6px}
+
+
+/* ---------- pill row v3 (Mark, 11 Oct): solid elevated chips, gold, soft shadow, motion ---------- */
+.prive-pills.prive-pills-v3{gap:8px;padding:6px 12px 8px;align-items:center}
+.prive-pills.prive-pills-v3 button{position:relative;isolation:isolate;display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:17px;
+  background:#171822;color:#E6CF9F;border:1px solid rgba(201,168,106,.42);font-weight:600;font-size:14px;letter-spacing:.01em;
+  box-shadow:0 2px 6px rgba(0,0,0,.38),0 8px 18px -10px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05);
+  transform:translateZ(0);transition:transform .38s cubic-bezier(.34,1.56,.64,1),color .25s ease,border-color .25s ease,box-shadow .25s ease;
+  -webkit-tap-highlight-color:transparent;will-change:transform}
+.prive-pills.prive-pills-v3 button:active{transform:scale(.96);transition-duration:.09s}
+/* the gold fill morphs in/out (scale + opacity only) */
+.prive-pills.prive-pills-v3 button::before{content:"";position:absolute;inset:-1px;border-radius:inherit;z-index:-1;background:linear-gradient(135deg,#E2C68E,#C9A86A 55%,#B08D4C);
+  opacity:0;transform:scale(.6,.4);transition:opacity .28s ease,transform .42s cubic-bezier(.34,1.4,.64,1)}
+.prive-pills.prive-pills-v3 button.active{color:#0A0B12;border-color:transparent;box-shadow:0 3px 10px rgba(201,168,106,.35),0 8px 18px -10px rgba(0,0,0,.6)}
+.prive-pills.prive-pills-v3 button.active::before{opacity:1;transform:none}
+.prive-pills.prive-pills-v3 .prive-pill-ico{width:17px;height:17px;flex:none}
+.prive-pills.prive-pills-v3 .prive-pill-fav{width:20px;height:20px;border-radius:6px;flex:none;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;
+  background:rgba(201,168,106,.16);color:#E6CF9F;font-size:11px;font-weight:700;position:relative}
+.prive-pills.prive-pills-v3 .prive-pill-fav img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .2s}
+.prive-pills.prive-pills-v3 .prive-pill-fav.has-img{background:#fff;color:transparent}
+.prive-pills.prive-pills-v3 .prive-pill-fav.has-img img{opacity:1}
+.prive-pills.prive-pills-v3 .prive-pill-dot{display:none;position:absolute;top:3px;right:5px;width:8px;height:8px;border-radius:50%;background:#C9A86A;box-shadow:0 0 0 2px #171822}
+.prive-pills.prive-pills-v3 .has-unseen .prive-pill-dot{display:block;animation:prive-dot 2.2s ease-in-out infinite}
+.prive-pills.prive-pills-v3 .has-unseen{border-color:rgba(201,168,106,.75)}
+@keyframes prive-dot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.35);opacity:.65}}
+/* enter / leave */
+.prive-pills.prive-pills-v3 .prive-chip-in{animation:prive-chip-in .42s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i,0) * 45ms)}
+.prive-pills.prive-pills-v3 .prive-chip-out{animation:prive-chip-out .28s ease both;pointer-events:none}
+@keyframes prive-chip-in{from{opacity:0;transform:translateX(-10px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes prive-chip-out{to{opacity:0;transform:scale(.85)}}
+/* light */
+html:not(.night) .prive-pills.prive-pills-v3 button{background:#fff;color:#6F531B;border-color:rgba(176,141,76,.55);box-shadow:0 1px 3px rgba(60,40,10,.12),0 6px 14px -8px rgba(60,40,10,.25)}
+html:not(.night) .prive-pills.prive-pills-v3 button.active{color:#0A0B12;border-color:transparent;box-shadow:0 3px 10px rgba(176,141,76,.35)}
+html:not(.night) .prive-pills.prive-pills-v3 .prive-pill-fav{background:rgba(176,141,76,.14);color:#6F531B}
+html:not(.night) .prive-pills.prive-pills-v3 .prive-pill-dot{box-shadow:0 0 0 2px #fff}
+@media (prefers-reduced-motion:reduce){
+  .prive-pills.prive-pills-v3 button,.prive-pills.prive-pills-v3 button::before{transition:none}
+  .prive-pills.prive-pills-v3 button:active{transform:none}
+  .prive-pills.prive-pills-v3 .prive-chip-in,.prive-pills.prive-pills-v3 .prive-chip-out,.prive-pills.prive-pills-v3 .has-unseen .prive-pill-dot{animation:none}
+}
+/* ---------- Websites tab (native, websitesTab.tsx) ---------- */
+.prive-websites-native .sidebar-header{gap:4px}
+.prive-ws-edit{border:0;background:none;color:#C9A86A;font:500 16px/1 inherit;padding:8px 10px;cursor:pointer;margin-left:auto}
+.prive-ws-chats-btn{margin-left:auto;color:#C9A86A}
+.prive-ws-chats-btn + .prive-ws-edit{margin-left:0}
+.prive-ws-count{font-size:13px;color:var(--secondary-text-color);font-weight:500}
+.prive-ws-fav{position:relative;width:100%;height:100%;border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  background:linear-gradient(135deg,rgba(201,168,106,.28),rgba(201,168,106,.1));color:#C9A86A;font-weight:700;font-size:18px}
+.prive-ws-fav img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0}
+.prive-ws-fav.has-img{background:#fff;color:transparent}.prive-ws-fav.has-img img{opacity:1}
+.prive-ws-badge{min-width:22px;height:22px;padding:0 7px;border-radius:11px;background:#C9A86A;color:#0A0B12;font:700 12.5px/22px inherit;text-align:center;display:inline-block}
+.prive-ws-muted,.prive-ws-role{font-size:13px;color:var(--secondary-text-color)}
+.prive-ws-more{border:0;background:rgba(201,168,106,.14);color:#C9A86A;border-radius:12px;padding:3px 9px;font-size:12px;letter-spacing:1px;cursor:pointer}
+.prive-ws-add .row-title,.prive-ws-connect .row-title,.prive-ws-add .row-icon,.prive-ws-connect .row-icon{color:#C9A86A!important}
+.prive-ws-loading{padding:16px;color:var(--secondary-text-color)}
+.prive-asheet{position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,0);display:flex;align-items:flex-end;justify-content:center;transition:background .2s}
+.prive-asheet.show{background:rgba(0,0,0,.45)}
+.prive-asheet-in{width:100%;max-width:480px;box-sizing:border-box;padding:14px 14px calc(14px + var(--prive-sab,0px));background:var(--surface-color);border-radius:18px 18px 0 0;
+  transform:translateY(100%);transition:transform .28s cubic-bezier(.22,1,.36,1);display:flex;flex-direction:column;gap:8px;box-shadow:0 -8px 30px rgba(0,0,0,.35)}
+.prive-asheet.show .prive-asheet-in{transform:none}
+.prive-asheet-title{font-weight:600;font-size:16px;text-align:center;padding:4px 0 2px}
+.prive-asheet-text{margin:0 0 4px;text-align:center;color:var(--secondary-text-color);font-size:14px;line-height:1.4}
+.prive-asheet-input{height:46px;border-radius:12px;border:1px solid rgba(201,168,106,.45);background:transparent;color:var(--primary-text-color);padding:0 14px;font-size:16px;outline:none}
+.prive-asheet-input:focus{border-color:#C9A86A}
+.prive-asheet-err{margin:0;min-height:16px;color:#e5534b;font-size:13px}
+.prive-asheet-btn{height:48px;border-radius:12px;border:0;font:600 16px inherit;cursor:pointer;background:rgba(127,127,127,.12);color:var(--primary-text-color);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.prive-asheet-btn:active{transform:scale(.97)}
+.prive-asheet-btn.primary{background:linear-gradient(135deg,#E2C68E,#C9A86A 55%,#B08D4C);color:#0A0B12}
+.prive-asheet-btn.danger{color:#e5534b}
+.prive-asheet-btn.cancel{background:none;color:#C9A86A}
+@media (prefers-reduced-motion:reduce){.prive-asheet-in,.prive-asheet-btn{transition:none}}
+.prive-websites-native .c-ripple{pointer-events:none}

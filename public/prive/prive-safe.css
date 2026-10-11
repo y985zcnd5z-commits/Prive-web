@@ -14,3 +14,5 @@ body{padding-top:var(--prive-sat)!important;box-sizing:content-box!important;hei
 .prive-switcher-menu{margin-top:0}
 #prive-connect-hint{top:calc(10px + var(--prive-sat))}
 .btn-menu.top-left,.btn-menu.top-right{max-height:calc(var(--100vh) - 16px)}
+/* status-bar band (iPhone Home Screen app): solid header colour, never the chat wallpaper behind it */
+html::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--prive-sat);background:var(--surface-color,#0A0B12);z-index:1000;pointer-events:none}
