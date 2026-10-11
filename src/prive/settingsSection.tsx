@@ -15,10 +15,14 @@ export default function PriveSettingsSection(props: {slider: SidebarSlider}) {
   const [push, setPushState] = createSignal(false);
   const [night, setNight] = createSignal(themeController.isNight());
   const [pass, setPass] = createSignal(localStorage.getItem('prive_pass_on') === '1');
+  const [bioAvail, setBioAvail] = createSignal(false), [bio, setBio] = createSignal(false), [bioName, setBioName] = createSignal('Unlock with Face ID');
+  const refreshBio = () => import('@/prive/passlock').then(async(m) => { setBioAvail(await m.bioSetting.available()); setBio(m.bioSetting.on()); setBioName(m.bioSetting.label()); });
+  const toggleBio = () => import('@/prive/passlock').then(async(m) => { const r = await m.bioSetting.set(!bio()); if(r !== true) toast(r); refreshBio(); });
   const refreshPass = () => import('@/prive/passlock').then((m) => m.passEnabled()).then(setPass);
   onMount(() => {
     loadPrivePrefs();
     refreshPass();
+    refreshBio();
     pushIsOn().then(setPushState);
   });
   const onTheme = () => setNight(themeController.isNight());
@@ -49,6 +53,12 @@ export default function PriveSettingsSection(props: {slider: SidebarSlider}) {
         <Row clickable={() => import('@/prive/passlock').then((m) => m.openPassSettings()).then(refreshPass)}>
           <Row.Icon icon="lock" />
           <Row.Title titleRight={text(pass() ? 'Change' : 'Set up')} titleRightSecondary>{text('Prive password')}</Row.Title>
+        </Row>
+      </Show>
+      <Show when={priveSignedIn() && pass() && bioAvail()}>
+        <Row clickable={toggleBio}>
+          <Row.Icon icon="lock" />
+          <Row.Title titleRight={text(bio() ? 'On' : 'Off')} titleRightSecondary>{text(bioName())}</Row.Title>
         </Row>
       </Show>
       <Row clickable={toggleTheme}>

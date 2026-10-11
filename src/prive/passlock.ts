@@ -7,6 +7,7 @@
  * Telegram account through @Prive2026Bot, which clears it, and the user creates a new one right away.
  */
 import {verifyTelegramFor} from '@/prive/tglink';
+import {bioAvailable, bioOn, bioUnlock, bioRegister, bioRemove, bioSync, bioForget, bioLabel, bioAction} from '@/prive/faceid';
 
 const ON_KEY = 'prive_pass_on';
 
@@ -47,16 +48,19 @@ export async function passEnabled(): Promise<boolean> {
   return passCachedOn();
 }
 
+const FACE_SVG = '<svg viewBox="0 0 32 32" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 10V7a3 3 0 0 1 3-3h3M22 4h3a3 3 0 0 1 3 3v3M28 22v3a3 3 0 0 1-3 3h-3M10 28H7a3 3 0 0 1-3-3v-3"/><path d="M11 12v2M21 12v2M16 12v6h-1.5M12 21.5a6 6 0 0 0 8 0"/></svg>';
 const LOCK_SVG = '<svg viewBox="0 0 24 24" width="30" height="30"><rect x="5" y="10.5" width="14" height="10" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
 
 type Field = {label: string, key: string};
 /** One full-screen Noir passcode screen. resolve(values) on submit (submit may reject with a message to shake). */
 function screen(opts: {title: string, sub?: string, fields: Field[], button: string, cancel?: string | false, forgot?: boolean, instant?: boolean,
-  submit: (v: Record<string, string>) => Promise<string | true>, onForgot?: () => void}): Promise<boolean> {
+  submit: (v: Record<string, string>) => Promise<string | true>, onForgot?: () => void,
+  bio?: {label: string, auto: boolean, run: () => Promise<{ok: true, j: any} | {ok: false, why: string}>}}): Promise<boolean> {
   return new Promise((resolve) => {
     const el = document.createElement('div');
     el.className = 'prive-lock';
     el.innerHTML = `<div class="prive-lock-in"><div class="prive-lock-icon">${LOCK_SVG}</div><h2></h2><p class="prive-lock-sub"></p>
+      <button type="button" class="prive-lock-bio" hidden><span class="prive-lock-bio-ico">${FACE_SVG}</span><span class="prive-lock-bio-t"></span></button>
       <form autocomplete="off"></form><p class="prive-lock-err" role="alert"></p>
       <button type="button" class="prive-lock-forgot">Forgot password?</button></div>
       <button type="button" class="prive-lock-cancel"></button>`;
@@ -105,8 +109,30 @@ function screen(opts: {title: string, sub?: string, fields: Field[], button: str
       forgot.disabled = false;
       if(ok) { err.textContent = ''; if(opts.onForgot) { el.remove(); opts.onForgot(); return; } done(true); } else err.textContent = 'Could not verify your Telegram account. Try again in a minute.';
     });
+    // Face ID: asked automatically when the lock opens; if the browser wants a tap first (iOS Home Screen app) or it
+    // was cancelled, the big button stays; the password is always there below it
+    const bioBtn = el.querySelector('.prive-lock-bio') as HTMLButtonElement;
+    let bioBusy = false;
+    const runBio = async() => {
+      if(bioBusy || !opts.bio) return; bioBusy = true; bioBtn.disabled = true; err.textContent = '';
+      try {
+        const r = await opts.bio.run();
+        if(r.ok === true) { done(true); return; }
+        const why = (r as {why: string}).why;
+        if(why === 'gone') { bioBtn.hidden = true; el.classList.remove('has-bio'); inputs[0].focus(); }
+        else if(why !== 'blocked' && why !== 'cancelled') err.textContent = why;
+      } catch(e) {} finally { bioBusy = false; bioBtn.disabled = false; }
+    };
+    if(opts.bio) {
+      bioBtn.hidden = false; el.classList.add('has-bio');
+      (el.querySelector('.prive-lock-bio-t') as HTMLElement).textContent = opts.bio.label;
+      bioBtn.addEventListener('click', runBio);
+    }
     document.body.append(el);
-    requestAnimationFrame(() => { el.classList.add('show'); inputs[0].focus(); });
+    requestAnimationFrame(() => {
+      el.classList.add('show');
+      if(opts.bio?.auto) runBio(); else inputs[0].focus();
+    });
   });
 }
 
@@ -118,7 +144,7 @@ const why = (r: {status: number, j: any}) =>
 /** Forgot: prove it's still the same Telegram account (Prive bot), which clears the password. */
 export async function forgotPassword(): Promise<boolean> {
   const r = await verifyTelegramFor('pass-reset').catch((): any => null);
-  if(r && r.reset) { localStorage.setItem(ON_KEY, '0'); return true; }
+  if(r && r.reset) { localStorage.setItem(ON_KEY, '0'); bioForget(); localStorage.removeItem('prive_bio_offered'); return true; } // the reset also removed the passkeys
   return false;
 }
 
@@ -140,9 +166,10 @@ function setupScreen(instant = true, afterReset = false): Promise<boolean> {
   });
 }
 /** The lock screen (every open / after the background timeout). Resolves when unlocked. */
-function unlockScreen(instant = true): Promise<boolean> {
+function unlockScreen(instant = true, bio = false): Promise<boolean> {
   return new Promise((resolve) => {
     screen({
+      bio: bio ? {label: bioAction(), auto: true, run: async() => { const r = await bioUnlock(api); if(r.ok === true) setUT(r.j); return r; }} : undefined,
       title: 'Enter your Prive password', sub: 'Prive is locked.', instant, cancel: false,
       fields: [{label: 'Password', key: 'p'}], button: 'Unlock', forgot: true,
       submit: async(v) => {
@@ -151,7 +178,7 @@ function unlockScreen(instant = true): Promise<boolean> {
         if(r.status === 200) setUT(r.j);
         return r.status === 200 ? true : why(r);
       },
-      onForgot: () => setupScreen(true, true).then(resolve) // reset by Telegram re-verification -> new password now
+      onForgot: () => setupScreen(true, true).then(async(v) => { await offerBio(); resolve(v); }) // reset by Telegram re-verification -> new password now (+ Face ID again)
     }).then(resolve);
   });
 }
@@ -225,7 +252,9 @@ async function lockNow(instant: boolean) {
       busy = false; return lockNow(instant);
     }
     localStorage.setItem(ON_KEY, st.j.enabled ? '1' : '0');
-    if(st.j.enabled) await unlockScreen(instant); else await setupScreen(instant);
+    bioSync(st.j.passkeys);
+    if(st.j.enabled) await unlockScreen(instant, bioOn() && await bioAvailable());
+    else { await setupScreen(instant); await offerBio(); }
   } finally { busy = false; }
   setLocked(false);
 }
@@ -251,6 +280,34 @@ export function installAppLock() {
   window.addEventListener('pagehide', () => { hiddenAt = hiddenAt || Date.now(); });
   window.addEventListener('pageshow', (e) => { if((e as PageTransitionEvent).persisted && hiddenAt && Date.now() - hiddenAt > BG_LOCK_MS && !locked) lockNow(true); hiddenAt = 0; });
 }
+
+/** right after the password is created: offer Face ID on this device (once; Settings can turn it on later) */
+async function offerBio() {
+  if(bioOn() || !(await bioAvailable()) || localStorage.getItem('prive_bio_offered')) return;
+  localStorage.setItem('prive_bio_offered', '1');
+  await new Promise<void>((resolve) => {
+    const el = document.createElement('div');
+    el.className = 'prive-lock prive-lock-offer';
+    el.innerHTML = `<div class="prive-lock-in"><div class="prive-lock-icon">${FACE_SVG}</div><h2></h2><p class="prive-lock-sub"></p><p class="prive-lock-err" role="alert"></p>
+      <button type="button" class="prive-lock-btn"></button><button type="button" class="prive-lock-forgot prive-lock-later">Not now</button></div>`;
+    el.querySelector('h2').textContent = bioAction() + '?';
+    el.querySelector('.prive-lock-sub').textContent = `Open Prive with ${bioLabel()} instead of typing your password. Your password still works, and you can change this in Settings.`;
+    const btn = el.querySelector('.prive-lock-btn') as HTMLButtonElement; btn.textContent = 'Use ' + bioLabel();
+    const close = () => { el.classList.remove('show'); setTimeout(() => el.remove(), 200); resolve(); };
+    btn.addEventListener('click', async() => {
+      btn.disabled = true; const r = await bioRegister(api); btn.disabled = false;
+      if(r === true) close(); else (el.querySelector('.prive-lock-err') as HTMLElement).textContent = r;
+    });
+    el.querySelector('.prive-lock-later').addEventListener('click', close);
+    document.body.append(el); requestAnimationFrame(() => el.classList.add('show'));
+  });
+}
+
+/** Settings > "Unlock with Face ID" (this device). */
+export const bioSetting = {
+  available: bioAvailable, on: bioOn, label: bioAction,
+  async set(on: boolean): Promise<true | string> { if(on) return bioRegister(api); await bioRemove(api); return true; }
+};
 
 /** Settings > Prive password: change it (it can't be turned off). */
 export async function openPassSettings(): Promise<void> {

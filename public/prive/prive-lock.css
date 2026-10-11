@@ -28,3 +28,14 @@
 html.prive-locked #page-chats,html.prive-locked .prive-tabbar{visibility:hidden}
 .prive-lock-wait .prive-lock-icon{animation:prive-lock-pulse 1.4s ease-in-out infinite}
 @keyframes prive-lock-pulse{50%{opacity:.45}}
+/* Face ID / Touch ID unlock */
+.prive-lock-bio{display:flex;flex-direction:column;align-items:center;gap:8px;margin:6px auto 14px;padding:16px 22px;min-width:200px;border-radius:18px;border:1px solid rgba(201,168,106,.5);
+  background:rgba(201,168,106,.1);color:#C9A86A;font:600 16px/1.2 inherit;cursor:pointer;transition:transform .3s cubic-bezier(.34,1.56,.64,1),background .2s}
+.prive-lock-bio:active{transform:scale(.96)}
+.prive-lock-bio[disabled]{opacity:.7}
+.prive-lock-bio[hidden]{display:none}
+.prive-lock-bio-ico{display:flex;width:44px;height:44px;align-items:center;justify-content:center}
+.prive-lock-bio-ico svg{width:44px;height:44px}
+.prive-lock.has-bio .prive-lock-in form input{opacity:.9}
+.prive-lock-offer .prive-lock-icon svg{width:34px;height:34px}
+@media (prefers-reduced-motion:reduce){.prive-lock-bio{transition:none}}
