@@ -56,7 +56,7 @@
         if(/[?&#](connect|listing)=/.test(q)){ if(localStorage.getItem('prive_view')==='telegram'&&localStorage.getItem('prive_pass_on')==='1') localStorage.setItem('prive_switch_pending','1'); else localStorage.setItem('prive_view','prive'); }
         var tg=localStorage.getItem('prive_view')==='telegram';
         document.documentElement.classList.add(tg?'prive-view-telegram':'prive-view-prive');
-        if(!tg) document.write('<link rel="stylesheet" href="prive/prive-web.css">');
+        document.write(tg?'<link rel="stylesheet" href="prive/prive-tgview.css">':'<link rel="stylesheet" href="prive/prive-web.css">');
       }catch(e){document.write('<link rel="stylesheet" href="prive/prive-web.css">');}})();
     </script>
     <link rel="stylesheet" href="prive/prive-switch.css">

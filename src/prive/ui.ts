@@ -29,7 +29,10 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
   // sign in to Prive with this Telegram account automatically (verified by Telegram via the Prive bot)
   setTimeout(() => import('@/prive/tglink').then((m) => m.priveAutoLink()), 1500);
   installSwitcher(sidebar);
-  if(IS_TELEGRAM_VIEW) return; // Telegram view: stock WebK, nothing else from Prive
+  if(IS_TELEGRAM_VIEW) { // Telegram view: stock WebK plus Telegram's own bottom tabs (no Websites)
+    installTabBar(sidebar, ['chats', 'contacts', 'settings']);
+    return;
+  }
   document.body.classList.add('prive-ui');
   loadPrivePrefs();
   import('@/prive/translate').then((m) => {
@@ -43,13 +46,38 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
     window.addEventListener('prive-prefs', resync);
   });
 
-  // ---------- floating glass tab bar (mobile) ----------
+  const {select} = installTabBar(sidebar, ['chats', 'contacts', 'websites', 'settings']);
+
+  // Arrived from a website's Chat on Prive button: open Websites with that Website Connect chat (the embedded
+  // /app does wc:open after the verified sign-in, shows the one-time consent and opens the chat).
+  const pendingConnect = () => { try { const p = JSON.parse(localStorage.getItem('prive_connect') || 'null'); return p && Date.now() - p.at < 3600e3 ? p : null; } catch(e) { return null; } };
+  const checkConnect = () => { if(pendingConnect()) select('websites', true); };
+  setTimeout(checkConnect, 800);
+  window.addEventListener('prive-connect', checkConnect);
+  window.addEventListener('storage', (e: StorageEvent) => { if(e.key === 'prive_connect' && e.newValue) checkConnect(); });
+
+  // ---------- website updates as a stories row above the chat list (Telegram Stories are disabled in Prive) ----------
+  const strip = installSiteStories();
+  const pills = installFolderPills(() => select('websites'));
+  const place = () => {
+    if(strip.isConnected && pills.isConnected) return;
+    const header = document.querySelector('#column-left .item-main .sidebar-header');
+    if(!header) return;
+    header.insertAdjacentElement('afterend', strip); // search bar -> website stories (fold into the header) -> pill tabs
+    strip.insertAdjacentElement('afterend', pills);
+  };
+  createRoot(() => createEffect(() => { privePrefs(); place(); window.dispatchEvent(new CustomEvent('prive-stories-reload')); })); // not 'prive-prefs': that reloads prefs -> effect -> loop
+  setTimeout(place, 1000);
+}
+
+/** Floating frosted bottom tab bar (mobile layout only). Prive view: Noir glass with Websites; Telegram view: stock colours. */
+function installTabBar(sidebar: AppSidebarLeft, keys: TabKey[]) {
   const bar = document.createElement('nav');
   bar.className = 'prive-tabbar';
-  bar.setAttribute('aria-label', 'Prive');
+  bar.setAttribute('aria-label', IS_TELEGRAM_VIEW ? 'Tabs' : 'Prive');
   let active: TabKey = 'chats';
   const buttons = {} as Record<TabKey, HTMLButtonElement>;
-  (Object.keys(LABEL) as TabKey[]).forEach((key) => {
+  keys.forEach((key) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'prive-tabbar-item';
@@ -67,7 +95,8 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
   };
   setActive('chats');
 
-  async function select(key: TabKey) {
+  async function select(key: TabKey, force?: boolean) {
+    if(force) active = 'chats';
     if(key === active && key !== 'chats') return;
     sidebar.closeEverythingInside();
     setActive(key);
@@ -75,14 +104,6 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
     else if(key === 'websites') sidebar.createTab(PriveWebsitesTab).open();
     else if(key === 'settings') sidebar.createTab(AppSettingsTab).open();
   }
-
-  // Arrived from a website's Chat on Prive button: open Websites with that Website Connect chat (the embedded
-  // /app does wc:open after the verified sign-in, shows the one-time consent and opens the chat).
-  const pendingConnect = () => { try { const p = JSON.parse(localStorage.getItem('prive_connect') || 'null'); return p && Date.now() - p.at < 3600e3 ? p : null; } catch(e) { return null; } };
-  const checkConnect = () => { if(pendingConnect()) { active = 'chats'; select('websites'); } };
-  setTimeout(checkConnect, 800);
-  window.addEventListener('prive-connect', checkConnect);
-  window.addEventListener('storage', (e: StorageEvent) => { if(e.key === 'prive_connect' && e.newValue) checkConnect(); });
 
   // Show the bar only on the root screens of the mobile layout (like Telegram: hidden inside a chat or a sub-screen).
   const history = () => ((sidebar as any).historyTabIds as any[]) || [];
@@ -104,16 +125,5 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
   window.addEventListener('message', () => setTimeout(update, 0));
   update();
 
-  // ---------- website updates as a stories row above the chat list (Telegram Stories are disabled in Prive) ----------
-  const strip = installSiteStories();
-  const pills = installFolderPills(() => select('websites'));
-  const place = () => {
-    if(strip.isConnected && pills.isConnected) return;
-    const header = document.querySelector('#column-left .item-main .sidebar-header');
-    if(!header) return;
-    header.insertAdjacentElement('afterend', strip); // search bar -> website stories (fold into the header) -> pill tabs
-    strip.insertAdjacentElement('afterend', pills);
-  };
-  createRoot(() => createEffect(() => { privePrefs(); place(); window.dispatchEvent(new CustomEvent('prive-stories-reload')); })); // not 'prive-prefs': that reloads prefs -> effect -> loop
-  setTimeout(place, 1000);
+  return {select};
 }
