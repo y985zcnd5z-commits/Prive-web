@@ -1,0 +1,16 @@
+/* Prive: iPhone safe areas. index.html uses viewport-fit=cover + black-translucent (full-screen Home Screen app),
+   so the page draws under the status bar / notch / Dynamic Island: keep every top bar below it.
+   In a Safari tab env(safe-area-inset-top) is 0, so nothing changes there. Loaded in both views. */
+:root{--prive-sat:env(safe-area-inset-top,0px);--prive-sab:env(safe-area-inset-bottom,0px)}
+html:root{--100vh:calc(var(--vh) * 100 - var(--prive-sat))}
+html:root{--100vh-inset:calc(var(--100vh) - 2 * var(--page-chats-padding))}
+body{padding-top:var(--prive-sat)!important;box-sizing:content-box!important;height:var(--100vh)!important;background-color:var(--body-background-color)}
+/* fixed / full-screen layers that live outside the normal flow */
+.media-viewer-whole .media-viewer-topbar,.media-viewer-whole .media-viewer-buttons{padding-top:var(--prive-sat)}
+.media-viewer-whole .media-viewer-topbar{height:calc(3.5rem + var(--prive-sat))}
+.popup{padding-top:var(--prive-sat);box-sizing:border-box}
+.prive-stories-overlay{padding-top:var(--prive-sat);box-sizing:border-box}
+.prive-stories-overlay iframe{height:100%}
+.prive-switcher-menu{margin-top:0}
+#prive-connect-hint{top:calc(10px + var(--prive-sat))}
+.btn-menu.top-left,.btn-menu.top-right{max-height:calc(var(--100vh) - 16px)}
