@@ -145,9 +145,24 @@ html:not(.night) .prive-sheet{--ps-bg:#f7f5f0;--ps-fg:#0A0B12;--ps-muted:#5B6475
 #prive-connect-hint b{color:#C9A86A}
 
 /* website updates in place of Telegram Stories: same row geometry as tweb's stories list */
-.prive-stories{display:flex;flex:none;gap:.25rem;overflow-x:auto;scrollbar-width:none;padding:.375rem .5rem .5rem;position:relative;z-index:1}
-.prive-stories::-webkit-scrollbar{display:none}
+.prive-stories{flex:none;position:relative;z-index:1;overflow:hidden;height:0;--p:0}
 .prive-stories.hide{display:none}
+.prive-stories-inner{display:flex;gap:.25rem;overflow-x:auto;scrollbar-width:none;padding:.375rem .5rem .5rem;
+  transform-origin:100% 0;transform:translateY(calc((var(--p) - 1) * 46px)) scale(calc(.45 + .55 * var(--p)));opacity:calc(var(--p) * 1.4 - .25)}
+.prive-stories-inner::-webkit-scrollbar{display:none}
+.prive-stories.prive-anim{transition:height .32s cubic-bezier(.2,.8,.2,1)}
+.prive-stories.prive-anim .prive-stories-inner{transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .24s ease}
+/* collapsed: small overlapping avatars at the end of the header (Telegram's folded stories) */
+.prive-stories-stack{--p:0;--w:0px;flex:none;display:flex;align-items:center;height:2.5rem;padding:0;margin:0 0 0 calc(.5rem * (1 - var(--p)));border:0;background:none;cursor:pointer;
+  width:calc(var(--w) * (1 - var(--p)));opacity:calc(1 - var(--p) * 1.6);transform:scale(calc(1 - .25 * var(--p)));overflow:visible}
+.prive-stories-stack.hide{display:none}
+.prive-stories-stack.prive-anim{transition:width .32s cubic-bezier(.2,.8,.2,1),opacity .2s ease,transform .32s cubic-bezier(.2,.8,.2,1),margin .32s}
+.prive-stack-ring{flex:none;width:1.625rem;height:1.625rem;border-radius:50%;padding:1.5px;box-sizing:border-box;display:flex;background:rgba(201,168,106,.28)}
+.prive-stack-ring+.prive-stack-ring{margin-left:-.6875rem}
+.prive-stack-ring.unseen{background:conic-gradient(from 200deg,#E6CF9B,#C9A86A,#A8894E,#E6CF9B)}
+.prive-stack-ring .prive-story-av{border-width:1.5px}
+.prive-stack-ring .prive-story-av i{font-size:.6875rem}
+.sidebar-header.is-search-active .prive-stories-stack,.sidebar-header:focus-within .prive-stories-stack{display:none}
 .prive-story{flex:none;width:4.5rem;display:flex;flex-direction:column;align-items:center;gap:.25rem;background:none;border:0;padding:0;cursor:pointer;color:var(--primary-text-color);font:inherit}
 .prive-story-ring{width:3.625rem;height:3.625rem;border-radius:50%;padding:2px;background:var(--secondary-text-color);opacity:.95;display:flex;transition:transform .15s}
 .prive-story:active .prive-story-ring{transform:scale(.94)}

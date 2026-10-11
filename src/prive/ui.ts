@@ -111,8 +111,8 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
     if(strip.isConnected && pills.isConnected) return;
     const header = document.querySelector('#column-left .item-main .sidebar-header');
     if(!header) return;
-    header.insertAdjacentElement('afterend', pills); // search bar -> All/Channels/Websites/Bots pill -> website stories
-    pills.insertAdjacentElement('afterend', strip);
+    header.insertAdjacentElement('afterend', strip); // search bar -> website stories (fold into the header) -> pill tabs
+    strip.insertAdjacentElement('afterend', pills);
   };
   createRoot(() => createEffect(() => { privePrefs(); place(); window.dispatchEvent(new CustomEvent('prive-stories-reload')); })); // not 'prive-prefs': that reloads prefs -> effect -> loop
   setTimeout(place, 1000);
