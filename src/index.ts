@@ -424,6 +424,13 @@ if(import.meta.env.DEV) {
 }
 
 /* false &&  */document.addEventListener('DOMContentLoaded', async() => {
+  // Synthetic Chats-menu demo: no session and no Telegram traffic.
+  if(new URLSearchParams(location.search).has('menuDemo')) {
+    const {mountSourceMenuDemo} = await import('@/prive/sourceFilter');
+    mountSourceMenuDemo();
+    return;
+  }
+
   const perf = performance.now();
   randomlyChooseVersionFromSearch();
   setSidebarLeftWidth();

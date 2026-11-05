@@ -107,6 +107,8 @@ function rowFor(c: WcChat): Item {
   it = {chat: c, row: null};
   const self = it;
   it.row = new CustomSortedDialog({render: () => build(self), destroy: () => { self.el?.destroy?.(); self.el = undefined; }, getIndex: () => indexOf(self.chat)});
+  it.row.listKind = 'website';
+  it.row.isUnread = () => self.chat.unread > 0;
   items.set(c.id, it);
   return it;
 }

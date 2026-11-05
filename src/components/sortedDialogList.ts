@@ -15,6 +15,7 @@ import {attachCommunityChildBadge} from '@components/communities/communityDialog
 import rootScope from '@lib/rootScope';
 import useElementSize from '@hooks/useElementSize';
 import {DIALOG_WITH_FOLDER_TAGS_HEIGHT, DialogFolderTagsContext} from '@components/folderTags/dialogFolderTags';
+import {sourceRowSize} from '@/prive/sourceFilter';
 
 export default class SortedDialogList {
   private appDialogsManager: typeof appDialogsManager;
@@ -152,12 +153,14 @@ export default class SortedDialogList {
       requestItemForIdx: options.requestItemForIdx,
       sortWith: (a, b) => b - a,
       itemSize: options.itemSize,
-      // * a row with folder tags is a line taller
-      getItemHeight: options.folderTagsFilterId !== undefined ? (item) => {
-        return item.type === 'dialog' && item.value.folderTags?.hasTags() ?
+      // * a row with folder tags is a line taller; a source filter collapses the rows it hides
+      getItemHeight: (item) => {
+        const height = options.folderTagsFilterId !== undefined &&
+          item.type === 'dialog' && item.value.folderTags?.hasTags() ?
           DIALOG_WITH_FOLDER_TAGS_HEIGHT :
           options.itemSize;
-      } : undefined,
+        return sourceRowSize(item, height);
+      },
       noAvatar: options.noAvatar,
       onListLengthChange: options.onListLengthChange,
       extraPaddingBottom: options.extraPaddingBottom
@@ -472,6 +475,9 @@ export class CustomSortedDialog {
   private destroyCallback?: () => void;
   private renderCallback: () => HTMLElement;
   getIndex: CustomSortedDialogCtorArgs['getIndex'];
+  /** Prive chat-list source filter: website rows are hidden from Telegram-only and vice versa */
+  listKind?: 'website';
+  isUnread?: () => boolean;
 
   constructor({render, destroy, getIndex}: CustomSortedDialogCtorArgs) {
     this.renderCallback = render;
