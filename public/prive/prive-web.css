@@ -310,3 +310,42 @@ body.prive-wc-open .prive-tabbar{display:none!important}
 @media (prefers-reduced-motion:reduce){.prive-wc-chat{transition:none}}
 #column-center:has(>.prive-wc-chat){position:relative}
 .prive-wc-chat:not(.in-center){padding-top:var(--prive-sat,0px);padding-bottom:var(--prive-sab,0px);box-sizing:border-box}
+
+/* Chats source menu (All / Telegram / Website / Unread). The layer covers the
+   trigger; dropping .show turns hit-testing off before the click of that press. */
+.prive-src-menu{position:fixed;inset:0;z-index:6000;pointer-events:none}
+.prive-src-menu.show{pointer-events:auto}
+.prive-src-back{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .22s ease}
+.prive-src-menu.show .prive-src-back{background:rgba(0,0,0,.18)}
+.prive-src-box{position:absolute;width:250px;border-radius:14px;overflow:hidden;opacity:0;transform:translateY(8px) scale(.98);transform-origin:top left;transition:opacity .18s ease,transform .18s ease;background:rgba(28,28,30,.72);-webkit-backdrop-filter:blur(40px) saturate(180%);backdrop-filter:blur(40px) saturate(180%);box-shadow:0 12px 40px rgba(0,0,0,.35),inset 0 0 0 .5px rgba(255,255,255,.12)}
+html:not(.night) .prive-src-box{background:rgba(249,249,249,.86);box-shadow:0 12px 40px rgba(0,0,0,.18),inset 0 0 0 .5px rgba(10,11,18,.08)}
+.prive-src-menu.show .prive-src-box{opacity:1;transform:none}
+.prive-src-item{display:flex;align-items:center;gap:8px;width:100%;height:44px;padding:0 16px 0 10px;border:0;background:none;color:inherit;font:inherit;font-size:17px;letter-spacing:-.4px;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.prive-src-item+.prive-src-item{box-shadow:inset 0 .5px 0 rgba(255,255,255,.12)}
+html:not(.night) .prive-src-item+.prive-src-item{box-shadow:inset 0 .5px 0 rgba(10,11,18,.12)}
+.prive-src-item:active{background:rgba(255,255,255,.1)}
+html:not(.night) .prive-src-item:active{background:rgba(10,11,18,.06)}
+.prive-src-check{width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;visibility:hidden}
+.prive-src-item.on .prive-src-check{visibility:visible}
+.prive-src-check svg,.prive-src-ico{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.prive-src-check svg{width:18px;height:18px;stroke-width:2.4}
+.prive-src-label{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prive-src-ico{width:22px;height:22px;flex:none;stroke-width:1.7}
+.prive-src-item{color:#6B6B6B;font-weight:400}
+.prive-src-item.on{color:#111;font-weight:600}
+html.night .prive-src-item{color:rgba(248,240,220,.55)}
+html.night .prive-src-item.on{color:#F8F0DC;font-weight:600}
+body.prive-src-tg #folders-container .chatlist-chat.prive-wc-row{display:none!important}
+body.prive-src-web #folders-container .chatlist-chat:not(.prive-wc-row){display:none!important}
+body.prive-unread-list #folders-container .chatlist-chat:not(:has(.dialog-subtitle-badge-unread:not(:empty))){display:none!important}
+body.prive-menu-demo{margin:0;min-height:100vh;background:#ece7dc;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body.prive-menu-demo .prive-demo-phone{position:relative;max-width:390px;min-height:100vh;margin:0 auto;background:#f7f5f0;color:#111}
+body.prive-menu-demo .prive-demo-list{padding:16px 0 108px}
+body.prive-menu-demo .prive-demo-row{display:flex;align-items:center;gap:10px;height:64px;padding:0 16px;border-bottom:1px solid rgba(10,11,18,.06)}
+body.prive-menu-demo .prive-demo-row b{flex:none}
+body.prive-menu-demo .prive-demo-row span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#6b6b6b;font-size:14px}
+body.prive-menu-demo .dialog-subtitle-badge-unread{flex:none;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#d14b4b;color:#fff;font-style:normal;font-size:12px;line-height:20px;text-align:center}
+body.prive-menu-demo .prive-tabbar{display:flex!important;left:50%;right:auto;width:min(366px,calc(100vw - 24px));transform:translateX(-50%)!important;bottom:16px}
+@media (prefers-reduced-motion:reduce){
+  .prive-src-box,.prive-src-back{transition:none}
+}
