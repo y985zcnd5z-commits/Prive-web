@@ -10,6 +10,10 @@
  *  - live: the Prive socket pushes new messages; archived rows move to the Archive list; the Channels filter never
  *    shows them (they are only added to the All and Archive lists)
  * Contact details are never shown (no phone, @username or Telegram profile).
+ * A row with category_id + category_label (on the row or on conversation) is a
+ * website-chat category: it is left out of All, Archive and Website Chats and
+ * listed only when that category is selected. kind, including "staff", is not
+ * a category. See src/prive/wcCategories.ts.
  */
 import appDialogsManager, {DialogElement} from '@lib/appDialogsManager';
 import {CustomSortedDialog} from '@components/sortedDialogList';
@@ -17,12 +21,17 @@ import {FOLDER_ID_ALL, FOLDER_ID_ARCHIVE, NULL_PEER_ID} from '@appManagers/const
 import {formatDateAccordingToTodayNew} from '@helpers/date';
 import replaceContent from '@helpers/dom/replaceContent';
 import {priveToken} from '@/prive/api';
+import {setWcCategorySource, wcCategoryOf} from '@/prive/wcCategories';
+import {sourceFilter} from '@/prive/sourceFilter';
 
 export type WcChat = {
   id: string, title: string, role: 'visitor' | 'advertiser' | 'moderating', siteId: string,
   site: {name: string, domain: string, icon: string | null} | null, listing: {title: string, emoji: string} | null,
   avatarUrl: string | null, initials: string, lastText: string, lastAt: number, lastMine: boolean,
-  unread: number, pinned: number, muted: boolean, archived: boolean, source: {url: string, title?: string} | null
+  unread: number, pinned: number, muted: boolean, archived: boolean, source: {url: string, title?: string} | null,
+  category_id?: string | null, category_label?: string | null, category_icon?: string | null,
+  kind?: string,
+  conversation?: {category_id?: string | null, category_label?: string | null, category_icon?: string | null, kind?: string, ref?: string} | null
 };
 
 type Item = {chat: WcChat, el?: DialogElement, row: CustomSortedDialog, list?: number, rebuild?: boolean};
@@ -117,7 +126,11 @@ function sync() {
     const xds = (appDialogsManager as any).xds || {};
     const counts: Record<number, number> = {};
     const seen = new Set<string>();
+    const choice = sourceFilter();
     for(const c of chats) {
+      // Categorized website chats are not part of All, Archive or Website Chats.
+      // Telegram-only hides every website row. A category list is the pane, not this mix.
+      if(choice === 'tg' || wcCategoryOf(c)) continue;
       const it = rowFor(c); seen.add(c.id);
       const want = c.archived ? FOLDER_ID_ARCHIVE : FOLDER_ID_ALL;
       if(it.list !== undefined && it.list !== want) { xds[it.list]?.sortedList?.delete(it.row, false); it.list = undefined; }
@@ -152,7 +165,7 @@ export async function reloadWcChats() {
   if(loading || !priveToken()) return; loading = true;
   try {
     const r = await api('/api/wc/list');
-    if(r.status === 200) { chats = r.j.chats || []; await sync(); }
+    if(r.status === 200) { chats = r.j.chats || []; setWcCategorySource(chats); await sync(); }
   } finally { loading = false; }
 }
 export const wcChats = () => chats;
@@ -246,11 +259,17 @@ export function installWcChats() {
   import('@/prive/passlock').then((pl) => pl.onceUnlocked(start)).catch(start);
   document.addEventListener('prive-unlocked', () => { if(sock && !sock.connected) sock.connect(); soon(); });
   document.addEventListener('prive-filter-change', () => setTimeout(sync, 300));
+  document.addEventListener('prive-src-filter', () => setTimeout(sync, 50));
   // the lists can be rebuilt by tweb (folder switch, archive opened, reconnect): put the rows back
   setInterval(() => {
     if(document.hidden || !chats.length) return;
     const xds = (appDialogsManager as any).xds || {};
-    if(chats.some((c) => { const sl = xds[c.archived ? FOLDER_ID_ARCHIVE : FOLDER_ID_ALL]?.sortedList; return sl && !sl.has(rowFor(c).row); })) sync();
+    const choice = sourceFilter();
+    if(chats.some((c) => {
+      if(choice === 'tg' || wcCategoryOf(c)) return false;
+      const sl = xds[c.archived ? FOLDER_ID_ARCHIVE : FOLDER_ID_ALL]?.sortedList;
+      return sl && !sl.has(rowFor(c).row);
+    })) sync();
   }, 1500);
   setInterval(() => { if(!document.hidden) reloadWcChats(); }, 60e3);
 }

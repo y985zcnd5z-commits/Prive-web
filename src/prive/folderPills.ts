@@ -14,6 +14,7 @@ import rootScope from '@lib/rootScope';
 import {FOLDER_ID_ALL, PRIVE_CHANNELS_FILTER_ID} from '@appManagers/constants';
 import {privePrefs, priveToken, type PriveSite} from '@/prive/api';
 import {openSiteSheet} from '@/prive/siteSheet';
+import {setSourceFilter, sourceFilter, toggleSourceMenu, watchChatsPill} from '@/prive/sourceFilter';
 
 export type PriveListFilter = 'all' | 'channels';
 let current: PriveListFilter = 'all';
@@ -93,12 +94,29 @@ export function installFolderPills(_openWebsites?: () => void): HTMLDivElement {
   bar = document.createElement('div');
   bar.className = 'prive-pills prive-pills-v2 prive-pills-v3';
   bar.setAttribute('role', 'toolbar');
+  const chatsBtn = document.createElement('button');
+  chatsBtn.type = 'button';
+  chatsBtn.dataset.f = 'chats';
+  chatsBtn.className = 'prive-pill-filter prive-chip-in prive-pill-src';
+  chatsBtn.setAttribute('aria-haspopup', 'menu');
+  chatsBtn.setAttribute('aria-expanded', 'false');
+  chatsBtn.setAttribute('aria-pressed', 'false');
+  chatsBtn.innerHTML = '<svg class="prive-pill-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="prive-pill-label">Chats</span><svg class="prive-pill-chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  chatsBtn.addEventListener('click', () => {
+    if(current === 'channels') setFilter('all');
+    toggleSourceMenu(chatsBtn);
+  });
+  watchChatsPill(chatsBtn);
   const ch = document.createElement('button');
   ch.type = 'button'; ch.dataset.f = 'channels'; ch.className = 'prive-pill-filter prive-chip-in';
   ch.innerHTML = '<svg class="prive-pill-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4a1 1 0 0 0 1 1h2l5 4V5L7 9H5a1 1 0 0 0-1 1Zm12.5-2.5a6 6 0 0 1 0 9M15 10a2.5 2.5 0 0 1 0 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="prive-pill-label">Channels</span>';
   ch.setAttribute('aria-pressed', 'false');
-  ch.addEventListener('click', () => setFilter(current === 'channels' ? 'all' : 'channels'));
-  bar.append(ch);
+  ch.addEventListener('click', () => {
+    const next = current === 'channels' ? 'all' : 'channels';
+    if(next === 'channels' && sourceFilter() !== 'all') setSourceFilter('all');
+    setFilter(next);
+  });
+  bar.append(chatsBtn, ch);
   // one launcher per connected website, live as sites are added/removed (new chips fade/slide in, removed ones fade out)
   let lastKey = '';
   createRoot(() => createEffect(() => {

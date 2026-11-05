@@ -437,6 +437,14 @@ if(import.meta.env.DEV) {
   listenForLinkPress();
   setRootClasses();
 
+  // Synthetic website-chat categories (?wc_cat_preview=1). No session, no live site.
+  // import.meta.env.DEV is a literal so production builds drop the chunk.
+  if(import.meta.env.DEV && new URLSearchParams(location.search).has('wc_cat_preview')) {
+    const {startWcCategoryPreview} = await import('@/prive/wcCategoryPreview');
+    await startWcCategoryPreview();
+    return;
+  }
+
   // ?popups=1 — the popup sandbox: every popup, opened by click with mock data and no session.
   // It has to take over here, before the session is restored and the auth flow starts.
   // The literal `import.meta.env.DEV` is not redundant with `IS_POPUP_SANDBOX` (which already

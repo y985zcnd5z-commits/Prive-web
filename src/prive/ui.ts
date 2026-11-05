@@ -13,6 +13,8 @@ import {PriveWebsitesTab} from '@/prive/tabs';
 import {loadPrivePrefs, privePrefs} from '@/prive/api';
 import {installSiteStories} from '@/prive/siteStories';
 import {installFolderPills} from '@/prive/folderPills';
+import {installSourceFilter} from '@/prive/sourceFilter';
+import {installWcCategoryPane} from '@/prive/wcCategoryPane';
 import {installWcChats} from '@/prive/wcChats';
 
 type TabKey = 'chats' | 'contacts' | 'websites' | 'settings'; // Profile lives in Settings (header + rows)
@@ -20,7 +22,7 @@ const SVG: Record<TabKey, string> = {
   chats: '<path d="M12 3.5c-4.97 0-9 3.47-9 7.75 0 2.3 1.17 4.37 3.03 5.79-.13 1.2-.6 2.43-1.53 3.46 1.98-.05 3.66-.8 4.86-1.67.84.2 1.7.3 2.64.3 4.97 0 9-3.47 9-7.88S16.97 3.5 12 3.5z"/>',
   contacts: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20c.6-3.6 3.7-6 7.5-6s6.9 2.4 7.5 6"/>',
   websites: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5M12 3.5C9.6 5.9 8.4 8.7 8.4 12s1.2 6.1 3.6 8.5"/>',
-  settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2.8l2 .4.6 2.3 1.6.9 2.2-.8 1.4 1.5-.8 2.2.9 1.6 2.3.6.4 2-.4 2-2.3.6-.9 1.6.8 2.2-1.4 1.5-2.2-.8-1.6.9-.6 2.3-2 .4-2-.4-.6-2.3-1.6-.9-2.2.8-1.4-1.5.8-2.2-.9-1.6-2.3-.6-.4-2 .4-2 2.3-.6.9-1.6-.8-2.2 1.4-1.5 2.2.8 1.6-.9.6-2.3z"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2.8l2 .4.6 2.3 1.6.9 2.2-.8 1.4 1.5-.8 2.2.9 1.6 2.3.6.4 2-.4 2-2.3.6-.9 1.6.8 2.2-1.4 1.5-2.2-.8-1.6.9-.6 2.3-2 .4-2-.4-.6-2.3-1.6-.9-2.2.8-1.4-1.5.8-2.2-.9-1.6-2.3-.6-.4-2 .4-2 2.3-.6.9-1.6-.8-2.2 1.4-1.5 2.2.8 1.6-.9.6-2.3z"/>'
 };
 const LABEL: Record<TabKey, string> = {chats: 'Chats', contacts: 'Contacts', websites: 'Websites', settings: 'Settings'};
 
@@ -68,7 +70,9 @@ export function installPriveUI(sidebar: AppSidebarLeft) {
 
   // ---------- website updates as a stories row above the chat list (Telegram Stories are disabled in Prive) ----------
   const strip = installSiteStories();
+  installSourceFilter();
   const pills = installFolderPills(() => select('websites'));
+  installWcCategoryPane();
   installWcChats(); // Website Connect chats as normal rows of the chat list
   const place = () => {
     if(strip.isConnected && pills.isConnected) return;
