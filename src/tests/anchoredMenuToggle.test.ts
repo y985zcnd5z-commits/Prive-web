@@ -95,6 +95,7 @@ describe('anchored menu toggle', () => {
 
     pointerUp();
     await flush();
+    pointerDown(other);
     click(other);
     expect(hits).toBe(1);
   });
@@ -111,7 +112,38 @@ describe('anchored menu toggle', () => {
     expect(menu.isOpen()).toBe(false);
     pointerUp();
     await flush();
+    pointerDown(anchor);
     click(anchor);
     expect(menu.isOpen()).toBe(true);
+  });
+
+  // WKWebView: pointerdown, touchstart, pointerup, touchend, then (after the
+  // task that pointerup queued) mousedown, mouseup, click on whatever is now
+  // under the finger. A setTimeout(0) disarm loses that click.
+  it('stays closed when the iOS click arrives after pointerup yields', async() => {
+    const {anchor, menu, opens} = setup();
+    click(anchor);
+    expect(menu.isOpen()).toBe(true);
+
+    const dismiss = document.querySelector('.menu-back');
+    pointerDown(dismiss);
+    expect(menu.isOpen()).toBe(false);
+    document.dispatchEvent(new Event('touchstart', {bubbles: true, cancelable: true}));
+    pointerUp();
+    const touchEnd = new Event('touchend', {bubbles: true, cancelable: true});
+    document.dispatchEvent(touchEnd);
+    expect(touchEnd.defaultPrevented).toBe(true);
+
+    await flush();
+    anchor.dispatchEvent(new MouseEvent('mousedown', {bubbles: true, cancelable: true}));
+    anchor.dispatchEvent(new MouseEvent('mouseup', {bubbles: true, cancelable: true}));
+    click(anchor);
+    expect(menu.isOpen()).toBe(false);
+    expect(opens()).toBe(1);
+
+    pointerDown(anchor);
+    click(anchor);
+    expect(menu.isOpen()).toBe(true);
+    expect(opens()).toBe(2);
   });
 });

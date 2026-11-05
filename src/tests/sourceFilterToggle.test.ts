@@ -98,7 +98,38 @@ describe('chats source menu', () => {
 
     pointerUp();
     await flush();
+    pointerDown(row);
     click(row);
     expect(opened).toBe(1);
+  });
+
+  it('stays closed when WKWebView delivers the click after pointerup yields', async() => {
+    installSourceFilter();
+    const chats = document.createElement('button');
+    chats.type = 'button';
+    chats.addEventListener('click', () => toggleSourceMenu(chats));
+    document.body.append(chats);
+
+    click(chats);
+    expect(chats.getAttribute('aria-expanded')).toBe('true');
+
+    pointerDown(document.querySelector('.prive-src-back'));
+    expect(chats.getAttribute('aria-expanded')).toBe('false');
+    document.dispatchEvent(new Event('touchstart', {bubbles: true, cancelable: true}));
+    pointerUp();
+    const touchEnd = new Event('touchend', {bubbles: true, cancelable: true});
+    document.dispatchEvent(touchEnd);
+    expect(touchEnd.defaultPrevented).toBe(true);
+
+    await flush();
+    chats.dispatchEvent(new MouseEvent('mousedown', {bubbles: true, cancelable: true}));
+    chats.dispatchEvent(new MouseEvent('mouseup', {bubbles: true, cancelable: true}));
+    click(chats);
+    expect(chats.getAttribute('aria-expanded')).toBe('false');
+
+    pointerDown(chats);
+    click(chats);
+    expect(chats.getAttribute('aria-expanded')).toBe('true');
+    expect(labels()).toEqual(['All Chats', 'Telegram Chats', 'Website Chats', 'Unread Chats']);
   });
 });

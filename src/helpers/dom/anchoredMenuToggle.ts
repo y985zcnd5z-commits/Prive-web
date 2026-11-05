@@ -5,10 +5,15 @@
  * (`pointer-events` drops when the open class is removed, or the node goes
  * away). The click that finishes the press is then hit-tested again and lands
  * on the trigger underneath, which would toggle the menu straight back open.
- * Touch and a mouse click both do this: pointerdown, pointerup, then click.
  *
- * The click that belongs to the dismissing press is swallowed. The next press
- * is a new gesture and toggles normally, so open → close → open still works.
+ * Desktop delivers that click in the same turn as pointerup, before timers.
+ * WKWebView on iOS does not: pointerdown, touchstart, pointerup, touchend,
+ * then the synthetic mousedown/mouseup/click in a later task — after a
+ * setTimeout(0) queued from pointerup. The guard has to still be armed when
+ * that click arrives. touchend is cancelled too, which is what stops WebKit
+ * from building the click; the click listener is the backup when it still fires.
+ *
+ * A later press (pointerdown, then its click) is a new gesture and toggles.
  */
 
 type AnchoredMenuParts = {
@@ -22,38 +27,49 @@ export type AnchoredMenuToggle = {
   isOpen: () => boolean
 };
 
+// WebKit's synthetic click can land up to ~300ms after touchend. Past this the
+// press is over and a keypress must not be eaten.
+const GHOST_CLICK_MS = 700;
+
 export function swallowClickFromThisPointerGesture(doc: Document = document) {
   let armed = true;
+  let laterPressAt = -1;
+  const view = doc.defaultView;
+  let timer = 0;
   const disarm = () => {
     if(!armed) return;
     armed = false;
+    view?.clearTimeout(timer);
     doc.removeEventListener('click', onClick, true);
     doc.removeEventListener('pointerdown', onLaterPointerDown, true);
-    doc.removeEventListener('pointerup', onPointerUp, true);
-    doc.removeEventListener('pointercancel', onPointerUp, true);
+    doc.removeEventListener('touchend', onTouchEnd, true);
   };
   const onClick = (event: Event) => {
+    if(!armed) return;
+    // Click of a press that started after the dismissing one.
+    if(laterPressAt >= 0 && event.timeStamp >= laterPressAt) {
+      disarm();
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     disarm();
   };
   // Capture, added during the dismiss pointerdown: that event is already past
   // capture, so it must not count as a new press and drop the guard early.
-  const onLaterPointerDown = () => {
-    disarm();
+  const onLaterPointerDown = (event: Event) => {
+    laterPressAt = event.timeStamp;
   };
-  const onPointerUp = () => {
-    doc.removeEventListener('pointerup', onPointerUp, true);
-    doc.removeEventListener('pointercancel', onPointerUp, true);
-    // Click is dispatched after pointerup, before timers. If this press was
-    // cancelled and no click comes, the guard must not eat a later keypress.
-    doc.defaultView?.setTimeout(disarm, 0);
+  const onTouchEnd = (event: Event) => {
+    if(!armed || (laterPressAt >= 0 && event.timeStamp >= laterPressAt)) return;
+    event.preventDefault();
+    event.stopPropagation();
   };
 
   doc.addEventListener('click', onClick, true);
   doc.addEventListener('pointerdown', onLaterPointerDown, true);
-  doc.addEventListener('pointerup', onPointerUp, true);
-  doc.addEventListener('pointercancel', onPointerUp, true);
+  doc.addEventListener('touchend', onTouchEnd, {capture: true, passive: false});
+  timer = view?.setTimeout(disarm, GHOST_CLICK_MS) ?? 0;
 }
 
 export function createAnchoredMenuToggle(options: {
